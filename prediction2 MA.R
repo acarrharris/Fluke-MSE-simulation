@@ -253,14 +253,47 @@ for (p in min_period:max_period) {
     # Collapse data from the X catch draws so that each row contains mean values
     mean_trip_data <-aggregate(trip_data, by=list(trip_data$tripid),FUN=mean, na.rm=TRUE)
     
-    #Trip probabiltiy (prediction year), based on expected utility
-    mean_trip_data$probA = exp(mean_trip_data$vA)/(1+exp(mean_trip_data$vA))
+    # Now expand the data to create three alternatives, representing the alternatives available in choice survey
+    mean_trip_data <- expandRows(mean_trip_data, 3, count.is.col = FALSE)
     
-    #Trip probabiltiy (baseline year), based on expected utility
-    mean_trip_data$prob0 = exp(mean_trip_data$v0)/(1+exp(mean_trip_data$v0))
+    #Alt 1, 2, 3
+    mean_trip_data$alt <- sequence(tabulate(mean_trip_data$tripid))
+    
+    #Alt 2 and 3 are the opt_out and other_fishing alternatives
+    mean_trip_data$opt_out = ifelse(mean_trip_data$alt!=1 & mean_trip_data$alt!=2, 1,0) 
+    mean_trip_data$striper_blue = ifelse(mean_trip_data$alt!=1 & mean_trip_data$alt!=3, 1,0) 
+    
+    #Caluculate the expected utility of alts 2 and 3 based on the parameters of the utility function
+    #These will be the same for both v0 and v1
+    mean_trip_data$vA_optout= param_draws_MANY1$optout*mean_trip_data$opt_out 
+    mean_trip_data$vA_striper_blue= param_draws_MANY1$striper_blue*mean_trip_data$striper_blue 
+    
+    #Now put these three values in the same column, exponentiate, and caluculate their sum (vA_col_sum)
+    mean_trip_data$vA[mean_trip_data$alt!=1] <- 0
+    mean_trip_data$v0[mean_trip_data$alt!=1] <- 0
+    
+    mean_trip_data$vA_row_sum = rowSums(mean_trip_data[,c("vA", "vA_striper_blue","vA_optout")])
+    mean_trip_data$vA_row_sum = exp(mean_trip_data$vA_row_sum)
+    mean_trip_data$vA_col_sum = ave(mean_trip_data$vA_row_sum, mean_trip_data$tripid, FUN = sum)
+    
+    mean_trip_data$v0_row_sum = rowSums(mean_trip_data[,c("v0", "vA_striper_blue","vA_optout")])
+    mean_trip_data$v0_row_sum = exp(mean_trip_data$v0_row_sum)
+    mean_trip_data$v0_col_sum = ave(mean_trip_data$v0_row_sum, mean_trip_data$tripid, FUN = sum)
+    
     
     #change in Consmer surplus between prediction year and baseline year 
-    mean_trip_data$change_CS = (1/param_draws_MANY1$cost)*(log(exp(mean_trip_data$vA)) - log(exp(mean_trip_data$v0)))
+    mean_trip_data$change_CS = (1/param_draws_MANY1$cost)*(log(mean_trip_data$vA_col_sum) - log(mean_trip_data$v0_col_sum))
+    
+    
+    # Caluculate the probability of a respondent selected each alternative based on 
+    # exponentiated expected utility of the altenrative [exp(expected utility, alt=i] 
+    # and the sum of exponentiated expected utility across the three altenratives.
+    # You will notice the striper_blue alternative has a large proabability based on the utility parameters
+    mean_trip_data$probA = mean_trip_data$vA_row_sum/mean_trip_data$vA_col_sum
+    mean_trip_data$prob0 = mean_trip_data$v0_row_sum/mean_trip_data$v0_col_sum
+    
+    # Get rid of things we don't need. 
+    mean_trip_data = subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum))
     
 
     # Multiply the average trip probability by each of the catch variables (not the variable below) to get probability-weighted catch

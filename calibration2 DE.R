@@ -451,8 +451,36 @@ for (p in min_period:max_period) {
     mean_trip_data <-aggregate(trip_data, by=list(trip_data$tripid),FUN=mean, na.rm=TRUE)
     
     
-    # Caluculate trip probability based on expected utility
-    mean_trip_data$probA = exp(mean_trip_data$vA)/(1+exp(mean_trip_data$vA))
+    # Now expand the data to create three alternatives, representing the alternatives available in choice survey
+    mean_trip_data <- expandRows(mean_trip_data, 3, count.is.col = FALSE)
+    
+    #Alt 1, 2, 3
+    mean_trip_data$alt <- sequence(tabulate(mean_trip_data$tripid))
+    
+    #Alt 2 and 3 are the opt_out and other_fishing alternatives
+    mean_trip_data$opt_out = ifelse(mean_trip_data$alt!=1 & mean_trip_data$alt!=2, 1,0) 
+    mean_trip_data$striper_blue = ifelse(mean_trip_data$alt!=1 & mean_trip_data$alt!=3, 1,0) 
+    
+    #Caluculate the expected utility of alts 2 and 3 based on the parameters of the utility function
+    mean_trip_data$vA_optout= param_draws_DEMD1$optout*mean_trip_data$opt_out 
+    mean_trip_data$vA_striper_blue= param_draws_DEMD1$striper_blue*mean_trip_data$striper_blue 
+    
+    #Now put these three values in the same column, exponentiate, and caluculate their sum (vA_col_sum)
+    mean_trip_data$vA[mean_trip_data$alt!=1] <- 0
+    mean_trip_data$vA_row_sum = rowSums(mean_trip_data[,c("vA", "vA_striper_blue","vA_optout")])
+    mean_trip_data$vA_row_sum = exp(mean_trip_data$vA_row_sum)
+    mean_trip_data$vA_col_sum = ave(mean_trip_data$vA_row_sum, mean_trip_data$tripid, FUN = sum)
+    
+    
+    
+    # Caluculate the probability of a respondent selected each alternative based on 
+    # exponentiated expected utility of the altenrative [exp(expected utility, alt=i] 
+    # and the sum of exponentiated expected utility across the three altenratives.
+    # You will notice the striper_blue alternative has a large proabability based on the utility parameters
+    mean_trip_data$probA = mean_trip_data$vA_row_sum/mean_trip_data$vA_col_sum
+    
+    # Get rid of things we don't need. 
+    mean_trip_data = subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum))
     
     
     # Multiply the trip probability by each of the catch variables (not the variable below) to get probability-weighted catch
