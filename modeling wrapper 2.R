@@ -25,58 +25,33 @@
 
 
 # Modeling wrapper test
-install.packages("readxl")
-install.packages("tidyr")
-install.packages("reshape2")
-install.packages("splitstackshape")
-install.packages("doBy")
-install.packages("WriteXLS")
-install.packages("Writexl")
-install.packages('Rcpp')
-install.packages("ggplot2")
-install.packages("ggplot")
-install.packages("dplyr")
-install.packages("rlist")
 
-install.packages("fitdistrplus")
-install.packages("MASS")
-install.packages("psych")
-install.packages("rgl")
-install.packages("copula")
-install.packages("VineCopula")
-install.packages("readxl")
+#load needed packages and install if not currently installed.
+pkgs_to_use <- c("readxl",
+                 "tidyr",
+                 "reshape2",
+                 "splitstackshape",
+                 "doBy",
+                 "WriteXLS",
+                 'Rcpp',
+                 "ggplot2",
+                 "dplyr",
+                 "rlist",
+                 "fitdistrplus",
+                 "MASS",
+                 "psych",
+                 "rgl",
+                 "copula",
+                 "VineCopula",
+                 "readxl",
+                 "scales",
+                 "univariateML",
+                 "xlsx",
+                 "writexl",
+                 "logspline")
+install.packages(setdiff(pkgs_to_use, rownames(installed.packages())))  
+lapply(pkgs_to_use, library, character.only = TRUE)
 
-install.packages("scales")
-install.packages("univariateML")
-install.packages("xlsx")
-install.packages("writexl")
-install.packages("logspline")
-
-library(psych)
-library(rgl)
-library(copula)
-library(VineCopula)
-library(readxl)
-library(scales)
-library(univariateML)
-library(xlsx)
-library(fitdistrplus)
-library(logspline)
-
-library(Rcpp)
-library(writexl)
-library(readxl)
-library(dplyr)
-library(tidyr)
-library(reshape2)
-library(data.table)
-library(splitstackshape)
-library(doBy)
-library(WriteXLS)
-library(rlist)
-library(xtable)
-library(MASS)
-library(stats)
 # Set the wd to wherever all the code/data is 
 
 #setwd("C:/Users/andrew.carr-harris/Dropbox/NMFS/fluke_mse/simulation_R_code/")
@@ -130,6 +105,34 @@ calibration_catch_at_length= subset(assment_CAL, select=c(l_in_bin, calibration_
 
 ##########  
 
+#save calibration output objects
+saveRDS(calibration_output_by_period,file = "calibration_output_by_period.rds")
+saveRDS(aggregate_calibration_output,file = "aggregate_calibration_output.rds")
+saveRDS(calibration_catch_at_length, file = "calibration_catch_at_length.rds")
+
+costs_all <- NULL
+costs_all[[1]] <- costs_new_all_MA
+costs_all[[2]] <- costs_new_all_RI
+costs_all[[3]] <- costs_new_all_CT
+costs_all[[4]] <- costs_new_all_NY
+costs_all[[5]] <- costs_new_all_NJ
+costs_all[[6]] <- costs_new_all_DE
+costs_all[[7]] <- costs_new_all_MD
+costs_all[[8]] <- costs_new_all_VA
+costs_all[[9]] <- costs_new_all_NC
+saveRDS(costs_all, file = "costs_all.rds")
+
+param_draws_all <- NULL
+param_draws_all[[1]] <- param_draws_MA
+param_draws_all[[2]] <- param_draws_RI
+param_draws_all[[3]] <- param_draws_CT
+param_draws_all[[4]] <- param_draws_NY
+param_draws_all[[5]] <- param_draws_NJ
+param_draws_all[[6]] <- param_draws_DE
+param_draws_all[[7]] <- param_draws_MD
+param_draws_all[[8]] <- param_draws_VA
+param_draws_all[[9]] <- param_draws_NC
+saveRDS(param_draws_all, file = "param_draws_all.rds")
 
 
 
