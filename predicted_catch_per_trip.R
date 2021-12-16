@@ -1,7 +1,8 @@
 #The following creates an cathc-per-trip dataset adjusted to reflect the population size
 
 ###Northern states
-catch_data <- read_excel("observed_catch_NO_19.xlsx")
+#catch_data <- read_excel("observed_catch_NO_19.xlsx")
+catch_data <- readRDS("observed_catch_NO_19.rds")
 
 sf <- catch_data$sf_tot_cat
 bsb <- catch_data$bsb_tot_cat
@@ -30,13 +31,13 @@ bsb_size <- nbfit_bsb$estimate['size']
 bsb_size
 
 
-#t copula
-t_cop_model <- tCopula(dim = 2)
-m <- pobs(as.matrix(cbind(sf,bsb)))
-fit <- fitCopula(t_cop_model, m, method = 'ml')
-fit
-coef(fit)
-
+# #t copula
+# t_cop_model <- tCopula(dim = 2)
+# m <- pobs(as.matrix(cbind(sf,bsb)))
+# fit <- fitCopula(t_cop_model, m, method = 'ml')
+# fit
+# coef(fit)
+fit <- readRDS("catch_copula_NO_19.rds")
 
 # Set the parameters
 rho <- coef(fit)[1]
@@ -56,11 +57,13 @@ mean(sf_t_nb)
 
 region="NO"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-write_xlsx(catch_data_sim, "predicted_catch_NO.xlsx") 
+#write_xlsx(catch_data_sim, "predicted_catch_NO.xlsx")
+saveRDS(catch_data_sim, "predicted_catch_NO.rdss")
 
 
 ###New Jersey
-catch_data <- read_excel("observed_catch_NJ_19.xlsx")
+#catch_data <- read_excel("observed_catch_NJ_19.xlsx")
+catch_data <- readRDS("observed_catch_NJ_19.rds")
 
 sf <- catch_data$sf_tot_cat
 bsb <- catch_data$bsb_tot_cat
@@ -89,12 +92,13 @@ bsb_size <- nbfit_bsb$estimate['size']
 bsb_size
 
 
-#t copula
-t_cop_model <- tCopula(dim = 2)
-m <- pobs(as.matrix(cbind(sf,bsb)))
-fit <- fitCopula(t_cop_model, m, method = 'ml')
-fit
-coef(fit)
+# #t copula
+# t_cop_model <- tCopula(dim = 2)
+# m <- pobs(as.matrix(cbind(sf,bsb)))
+# fit <- fitCopula(t_cop_model, m, method = 'ml')
+# fit
+# coef(fit)
+fit <- readRDS("catch_copula_NJ_19.rds")
 
 
 # Set the parameters
@@ -115,12 +119,13 @@ mean(sf_t_nb)
 
 region="NJ"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-write_xlsx(catch_data_sim, "predicted_catch_NJ.xlsx") 
-
+#write_xlsx(catch_data_sim, "predicted_catch_NJ.xlsx") 
+saveRDS(catch_data_sim, "predicted_catch_NJ.rds")
 
 
 ###Southern states
-catch_data <- read_excel("observed_catch_SO_19.xlsx")
+#catch_data <- read_excel("observed_catch_SO_19.xlsx")
+catch_data <- readRDS("observed_catch_SO_19.rds")
 
 sf <- catch_data$sf_tot_cat
 bsb <- catch_data$bsb_tot_cat
@@ -149,12 +154,13 @@ bsb_size <- nbfit_bsb$estimate['size']
 bsb_size
 
 
-#t copula
-t_cop_model <- tCopula(dim = 2)
-m <- pobs(as.matrix(cbind(sf,bsb)))
-fit <- fitCopula(t_cop_model, m, method = 'ml')
-fit
-coef(fit)
+# #t copula
+# t_cop_model <- tCopula(dim = 2)
+# m <- pobs(as.matrix(cbind(sf,bsb)))
+# fit <- fitCopula(t_cop_model, m, method = 'ml')
+# fit
+# coef(fit)
+fit <- readRDS("catch_copula_SO_19.rds")
 
 
 # Set the parameters
@@ -175,4 +181,5 @@ mean(sf_t_nb)
 
 region="SO"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-write_xlsx(catch_data_sim, "predicted_catch_SO.xlsx")
+#write_xlsx(catch_data_sim, "predicted_catch_SO.xlsx")
+saveRDS(catch_data_sim, "predicted_catch_SO.rds")
