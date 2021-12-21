@@ -124,7 +124,7 @@ source("prediction-all.R")
 ##########  need to add link to OM scenario regulations
 
 safe_predict_rec_catch <- purrr::safely(predict_rec_catch, otherwise = NA_real_)
-profvis::profvis(xx <- purrr::pmap(params, safe_predict_rec_catch))
+xx <- purrr::pmap(params, safe_predict_rec_catch)
 
 # xx <- predict_rec_catch(state1 = "MA",
 #                         region1 = "NO",
