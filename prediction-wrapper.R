@@ -126,15 +126,15 @@ source("prediction-all.R")
 safe_predict_rec_catch <- purrr::safely(predict_rec_catch, otherwise = NA_real_)
 xx <- purrr::pmap(params, safe_predict_rec_catch)
 
-# xx <- predict_rec_catch(state1 = "MA",
-#                         region1 = "NO",
-#                         calibration_data_table = calibration_data_table,
-#                         directed_trips_table = directed_trips_table,
-#                         size_data_read = size_data_read,
-#                         param_draws_MA = param_draws_all[[1]],
-#                         costs_new_all_MA = costs_new[[1]],
-#                         sf_catch_data_all = sf_catch_data_no)
-# 
+profvis::profvis(testMA <- predict_rec_catch(state1 = "MA",
+                        region1 = "NO",
+                        calibration_data_table = calibration_data_table,
+                        directed_trips_table = directed_trips_table,
+                        size_data_read = size_data_read,
+                        param_draws_MA = param_draws_all[[1]],
+                        costs_new_all_MA = costs_new[[1]],
+                        sf_catch_data_all = sf_catch_data_no))
+
 # xx <- predict_rec_catch(state1 = "NJ",
 #                         region1 = "NJ",
 #                         calibration_data_table = calibration_data_table,

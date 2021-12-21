@@ -26,6 +26,17 @@ predict_rec_catch <- function(state1 = "MA",
                                prop_bsb_keep = 0.33) {
    
 
+  #MA test vals for running through function directly 
+  state1 = "MA"
+  region1 = "NO"
+  calibration_data_table = calibration_data_table
+  directed_trips_table = directed_trips_table
+  size_data_read = size_data_read
+  param_draws_MA = param_draws_all[[1]]
+  costs_new_all_MA = costs_new[[1]]
+  sf_catch_data_all = sf_catch_data_no
+  prop_bsb_keep = 0.33
+  
 # state1="MA"
 # region1="NO"
 calibration_data = filter(calibration_data_table, state == state1)
@@ -63,7 +74,7 @@ pds <- list()
 
 periodz <- as.factor(directed_trips$period)
 levels(periodz)
-
+  
 for(p in levels(periodz)){
   directed_trips_p = subset(directed_trips, period == p)
   n_trips = mean(directed_trips_p$dtrip_2019)
@@ -86,7 +97,7 @@ for(p in levels(periodz)){
     rd_min = mean(directed_trips_p$rd_min)  
     rd_max = mean(directed_trips_p$rd_max)  
   }
-  
+ 
   # Set up an output file for the separate catch draw files 
   dfs = list()
   
@@ -96,6 +107,7 @@ for(p in levels(periodz)){
   #tot_bsb_catch = sf_catch_data$bsb_t_nb
 
   for(i in 1:10) {
+    
   #set.seed(10)
   #get_catch_draws <- function(i, sf_catch_data_all) {    
   #  print(i)
@@ -180,7 +192,7 @@ for(p in levels(periodz)){
     new_size_data <- catch_size_data %>% 
       group_by(tripid, fitted_length) %>% 
       summarize(keep = sum(keep),
-                release = sum(release)) %>% 
+                release = sum(release), .groups = "drop") %>% 
       I()
     
     
@@ -188,7 +200,7 @@ for(p in levels(periodz)){
     summed_catch_data <- catch_size_data %>% 
       group_by(tripid) %>% 
       summarize(tot_keep = sum(keep),
-                tot_rel = sum(release)) %>% 
+                tot_rel = sum(release), .groups = "drop") %>% 
       I()
     #catch_size_data$tot_keep=with(catch_size_data, ave(keep, tripid, FUN = sum))
     #catch_size_data$tot_rel=with(catch_size_data, ave(release, tripid, FUN = sum))
@@ -217,7 +229,7 @@ for(p in levels(periodz)){
                   values_from = keep, 
                   values_fill = 0) %>% 
       I()
-    keep_size_data
+    #keep_size_data
     
     release_size_data <- new_size_data %>%
       ungroup() %>% 
@@ -228,7 +240,7 @@ for(p in levels(periodz)){
                   values_from = release, 
                   values_fill = 0) %>% 
       I()
-    release_size_data
+    #release_size_data
     
     # names(keep_size_data)[names(keep_size_data) == "fitted_length"] = "keep_length"
     # keep_size_data_wide <- spread(keep_size_data, keep_length, keep)
@@ -255,8 +267,8 @@ for(p in levels(periodz)){
     # trip_data =  merge(trip_data,catch_size_data2,by="tripid", all.x=TRUE, all.y=TRUE)
     
     trip_data <- summed_catch_data %>% 
-      left_join(keep_size_data) %>% 
-      left_join(release_size_data) %>% 
+      left_join(keep_size_data, by = "tripid") %>% 
+      left_join(release_size_data, by = "tripid") %>% 
       I()
     trip_data
     
@@ -317,22 +329,22 @@ for(p in levels(periodz)){
     #trip_data <-  merge(trip_data,bsb_sc_data,by="tripid") %>% 
     dfs[[i]] <- trip_data %>% 
       ungroup() %>% 
-      left_join(bsb_sc_data) %>% 
+      left_join(bsb_sc_data, by = "tripid") %>% 
       mutate_if(is.numeric, replace_na, replace = 0) %>% 
-      mutate(region = ifelse(is.na(region),region1,region)) %>% 
-      mutate(catch_draw = rep(i,nrow(.)),
+      mutate(region = region1,
+             catch_draw = rep(i,nrow(.)),
              tot_keep_bsb = rbinom(nrow(.), tot_bsb_catch, prop_bsb_keep),   # GF adding BSB catch from draws to retain correlation
              tot_rel_bsb = tot_bsb_catch - tot_keep_bsb) %>% 
       dplyr::select(catch_draw, everything()) %>% 
       I()
     #trip_data[is.na(trip_data)] = 0        
     
-    
+  
     #    trip_data$catch_draw=i
     #dfs <- trip_data
     #return(dfs)
   }
-  
+
   #dfs_all = as.data.frame(bind_rows(dfs[[1]], dfs[[2]],dfs[[3]],dfs[[4]],dfs[[5]],
   #                                  dfs[[6]], dfs[[7]],dfs[[8]],dfs[[9]],dfs[[10]]))
   dfs_all <- bind_rows(dfs) %>% 
@@ -360,7 +372,8 @@ pds_all= list.stack(pds, fill=TRUE)
 ######################################
 
 # Now calculate trip probabilities and utilities based on the multiple catch draws for each choice occasion
-
+profvis::profvis({ 
+  
 pds_new = list()
 for(p in levels(periodz)){
   
@@ -464,9 +477,10 @@ for(p in levels(periodz)){
     
     # Collapse data from the X catch draws so that each row contains mean values
     #mean_trip_data <-aggregate(trip_data, by=list(trip_data$tripid),FUN=mean, na.rm=TRUE)
-    mean_trip_data <- trip_data %>% 
+      mean_trip_data <- trip_data %>% 
       group_by(tripid) %>% 
-      summarise_all(.funs = c("mean"), na.rm = TRUE)
+      summarise_if(is.numeric,.funs = c("mean"), na.rm = TRUE, .groups = "drop")
+      #summarise_all(.funs = c("mean"), na.rm = TRUE, .groups = "drop")
     
     # Now expand the data to create three alternatives, representing the alternatives available in choice survey
     mean_trip_data <- expandRows(mean_trip_data, 3, count.is.col = FALSE)
@@ -487,13 +501,19 @@ for(p in levels(periodz)){
     mean_trip_data$vA[mean_trip_data$alt!=1] <- 0
     mean_trip_data$v0[mean_trip_data$alt!=1] <- 0
     
-    mean_trip_data$vA_row_sum = rowSums(mean_trip_data[,c("vA", "vA_striper_blue","vA_optout")])
-    mean_trip_data$vA_row_sum = exp(mean_trip_data$vA_row_sum)
-    mean_trip_data$vA_col_sum = ave(mean_trip_data$vA_row_sum, mean_trip_data$tripid, FUN = sum)
+    mean_trip_data <- mean_trip_data %>% 
+      group_by(tripid) %>% 
+      mutate(vA_row_sum = exp(vA + vA_striper_blue + vA_optout),
+             vA_col_sum = sum(vA_row_sum),
+             v0_row_sum = exp(v0 + vA_striper_blue + vA_optout),
+             v0_col_sum = sum(v0_row_sum))
+    # mean_trip_data$vA_row_sum = rowSums(mean_trip_data[,c("vA", "vA_striper_blue","vA_optout")])
+    # mean_trip_data$vA_row_sum = exp(mean_trip_data$vA_row_sum)
+    # mean_trip_data$vA_col_sum = ave(mean_trip_data$vA_row_sum, mean_trip_data$tripid, FUN = sum)
     
-    mean_trip_data$v0_row_sum = rowSums(mean_trip_data[,c("v0", "vA_striper_blue","vA_optout")])
-    mean_trip_data$v0_row_sum = exp(mean_trip_data$v0_row_sum)
-    mean_trip_data$v0_col_sum = ave(mean_trip_data$v0_row_sum, mean_trip_data$tripid, FUN = sum)
+    # mean_trip_data$v0_row_sum = rowSums(mean_trip_data[,c("v0", "vA_striper_blue","vA_optout")])
+    # mean_trip_data$v0_row_sum = exp(mean_trip_data$v0_row_sum)
+    # mean_trip_data$v0_col_sum = ave(mean_trip_data$v0_row_sum, mean_trip_data$tripid, FUN = sum)
     
     
     #change in Consmer surplus between prediction year and baseline year 
@@ -542,9 +562,10 @@ for(p in levels(periodz)){
                                           & colnames(mean_trip_data) !="vA" & colnames(mean_trip_data) !="v0"  & colnames(mean_trip_data) !="probA"
                                           & colnames(mean_trip_data) !="prob0" & colnames(mean_trip_data) !="change_CS"  ]    
     
-    for (l in list_names){
-      mean_trip_data[,l] = mean_trip_data[,l]*mean_trip_data$probA
-    }
+    # for (l in list_names){
+    #   mean_trip_data[,l] = mean_trip_data[,l]*mean_trip_data$probA
+    # }
+    mean_trip_data[,list_names] <- mean_trip_data$probA*mean_trip_data[,list_names]
     
     #Now multiply the trip outcomes (catch, trip probabilities) for each choice occasion in 
     #mean_trip_pool by the expansion factor (expand), so that  each choice occasion represents a certain number of choice occasions
@@ -562,9 +583,10 @@ for(p in levels(periodz)){
                                           & colnames(mean_trip_data) !="tot_keep_rd_base" & colnames(mean_trip_data) !="tot_rel_rd_base"
                                            & colnames(mean_trip_data) !="cost" & colnames(mean_trip_data) !="vA" & colnames(mean_trip_data) !="v0"]
     
-    for (l in list_names){
-      mean_trip_data[,l] = mean_trip_data[,l]*expand
-    }
+    # for (l in list_names){
+    #   mean_trip_data[,l] = mean_trip_data[,l]*expand
+    # }
+    mean_trip_data[,list_names] <- expand*mean_trip_data[,list_names]
     
     #This equals the observed number of trips under the new conditions
     sum(mean_trip_data$probA)
@@ -603,12 +625,15 @@ for(p in levels(periodz)){
 }
 
 
-pds_new_all_MA=list.stack(pds_new, fill=TRUE)
-
-pds_new_all_MA[is.na(pds_new_all_MA)] = 0
-pds_new_all_MA$state = state1
-pds_new_all_MA$region = region1
-pds_new_all_MA$alt_regs = 1
+pds_new_all_MA <- list.stack(pds_new, fill=TRUE) %>% 
+  mutate_at(vars(contains("length")), replace_na, replace = 0) %>% 
+#pds_new_all_MA[is.na(pds_new_all_MA)] = 0
+  mutate(state = state1,
+         region = region1,
+         alt_regs = 1)
+#  pds_new_all_MA$state = state1
+#pds_new_all_MA$region = region1
+#pds_new_all_MA$alt_regs = 1
 # pds_new_all_MA=subset(pds_new_all_MA, select=-c(Group.1, tot_keep_sf_base, tot_rel_sf_base, 
 #                                                 tot_keep_scup_base, tot_rel_scup_base, 
 #                                                 tot_keep_bsb_base, tot_rel_bsb_base, tot_sf_catch))
@@ -633,6 +658,8 @@ pds_new_all_MA=subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_bas
                                                 tot_keep_wf_base, tot_rel_wf_base, tot_keep_rd_base, tot_rel_rd_base,
                                                 tot_keep_bsb_base, tot_rel_bsb_base, tot_sf_catch))
 }
+
+},interval = 0.001)
 # write_xlsx(pds_new_all_MA,"MA_prediction_output_check.xlsx")
 return(pds_new_all_MA)
 
