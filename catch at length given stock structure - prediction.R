@@ -45,7 +45,7 @@ sum(numbers_at_length$N_l)
 # Import and merge the selectivity data to this file 
 #selectivity = data.frame(read_excel("rec_selectivity.xlsx"))
 selectivity <- readRDS("rec_selectivity.rds")
-selectivity <-subset(selectivity, select=c(l_in_bin, fitted_prob, region, q, E, observed_C_l))
+selectivity <-subset(selectivity, select=c(l_in_bin, region, q, E, C_l))
 numbers_at_length_new =  merge(selectivity,numbers_at_length,by="l_in_bin", all.x=TRUE, all.y=TRUE)
 
 numbers_at_length_new[is.na(numbers_at_length_new)] = 0
@@ -75,9 +75,9 @@ tot_cat_NJ_predicted=sum(numbers_at_length_NJ$C_l_new)
 tot_cat_SO_predicted=sum(numbers_at_length_SO$C_l_new)
 
 
-tot_cat_NO_base=sum(subset(selectivity, region == "NO")$observed_C_l)
-tot_cat_NJ_base=sum(subset(selectivity, region == "NJ")$observed_C_l)
-tot_cat_SO_base=sum(subset(selectivity, region == "SO")$observed_C_l)
+tot_cat_NO_base=sum(subset(selectivity, region == "NO")$C_l)
+tot_cat_NJ_base=sum(subset(selectivity, region == "NJ")$C_l)
+tot_cat_SO_base=sum(subset(selectivity, region == "SO")$C_l)
 
 tot_cat_base = tot_cat_NO_base+tot_cat_NJ_base+tot_cat_SO_base
 tot_cat_predicted = tot_cat_NO_predicted + tot_cat_NJ_predicted+tot_cat_SO_predicted
