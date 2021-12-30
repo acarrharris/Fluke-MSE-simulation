@@ -9,15 +9,20 @@ bsb <- catch_data$bsb_tot_cat
 
 
 #estimate the nb parameters
-nbfit_sf = fitdistr(sf, "Negative Binomial")
-summary(nbfit_sf)
+# nbfit_sf = fitdistr(sf, "Negative Binomial")
+# summary(nbfit_sf)
+# 
+# sf_mu <- nbfit_sf$estimate['mu']
+# sf_mu
+# 
+# sf_size <- nbfit_sf$estimate['size']
+# sf_size
 
+
+# Read in the nb parameters for sf
+nbfit_sf <- readRDS("nb_catch_parameters_sf_NO_19.rds")
 sf_mu <- nbfit_sf$estimate['mu']
-sf_mu
-
 sf_size <- nbfit_sf$estimate['size']
-sf_size
-
 
 # We now adjust mean catch per trip by the expansion factor. 
 # We will assume that in the prediction year under a new mean catch per trip, 
@@ -50,14 +55,19 @@ cv_sf_new
 
 
 # Get the black sea bass parameters 
-nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
-nbfit_bsb
+# nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
+# nbfit_bsb
+# 
+# bsb_mu <- nbfit_bsb$estimate['mu']
+# bsb_mu
+# bsb_size <- nbfit_bsb$estimate['size']
+# bsb_size
+# bsb_size
 
+# Read in the nb parameters for bsb
+nbfit_bsb <- readRDS("nb_catch_parameters_bsb_NO_19.rds")
 bsb_mu <- nbfit_bsb$estimate['mu']
-bsb_mu
 bsb_size <- nbfit_bsb$estimate['size']
-bsb_size
-bsb_size
 
 
 # #t copula
@@ -99,15 +109,19 @@ bsb <- catch_data$bsb_tot_cat
 
 
 #estimate the nb parameters
-nbfit_sf = fitdistr(sf, "Negative Binomial")
-summary(nbfit_sf)
+# nbfit_sf = fitdistr(sf, "Negative Binomial")
+# summary(nbfit_sf)
+# 
+# sf_mu <- nbfit_sf$estimate['mu']
+# sf_mu
+# 
+# sf_size <- nbfit_sf$estimate['size']
+# sf_size
 
+# Read in the nb parameters for sf
+nbfit_sf <- readRDS("nb_catch_parameters_sf_NJ_19.rds")
 sf_mu <- nbfit_sf$estimate['mu']
-sf_mu
-
 sf_size <- nbfit_sf$estimate['size']
-sf_size
-
 
 # We now adjust mean catch per trip by the expansion factor. 
 # We will assume that in the prediction year under a new mean catch per trip, 
@@ -140,14 +154,19 @@ cv_sf_new
 
 
 # Get the black sea bass parameters 
-nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
-nbfit_bsb
+# nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
+# nbfit_bsb
+# 
+# bsb_mu <- nbfit_bsb$estimate['mu']
+# bsb_mu
+# bsb_size <- nbfit_bsb$estimate['size']
+# bsb_size
+# bsb_size
 
+# Read in the nb parameters for bsb
+nbfit_bsb <- readRDS("nb_catch_parameters_bsb_NJ_19.rds")
 bsb_mu <- nbfit_bsb$estimate['mu']
-bsb_mu
 bsb_size <- nbfit_bsb$estimate['size']
-bsb_size
-bsb_size
 
 
 # #t copula
@@ -190,14 +209,19 @@ bsb <- catch_data$bsb_tot_cat
 
 
 #estimate the nb parameters
-nbfit_sf = fitdistr(sf, "Negative Binomial")
-summary(nbfit_sf)
+# nbfit_sf = fitdistr(sf, "Negative Binomial")
+# summary(nbfit_sf)
+# 
+# sf_mu <- nbfit_sf$estimate['mu']
+# sf_mu
+# 
+# sf_size <- nbfit_sf$estimate['size']
+# sf_size
 
+# Read in the nb parameters for sf
+nbfit_sf <- readRDS("nb_catch_parameters_sf_SO_19.rds")
 sf_mu <- nbfit_sf$estimate['mu']
-sf_mu
-
 sf_size <- nbfit_sf$estimate['size']
-sf_size
 
 
 # We now adjust mean catch per trip by the expansion factor. 
@@ -231,14 +255,19 @@ cv_sf_new
 
 
 # Get the black sea bass parameters 
-nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
-nbfit_bsb
+# nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
+# nbfit_bsb
+# 
+# bsb_mu <- nbfit_bsb$estimate['mu']
+# bsb_mu
+# bsb_size <- nbfit_bsb$estimate['size']
+# bsb_size
+# bsb_size
 
+# Read in the nb parameters for bsb
+nbfit_bsb <- readRDS("nb_catch_parameters_bsb_SO_19.rds")
 bsb_mu <- nbfit_bsb$estimate['mu']
-bsb_mu
 bsb_size <- nbfit_bsb$estimate['size']
-bsb_size
-bsb_size
 
 
 # #t copula
