@@ -10,7 +10,8 @@ bsb <- catch_data$bsb_tot_cat
 
 #estimate the nb parameters
 nbfit_sf = fitdistr(sf, "Negative Binomial")
-nbfit_sf
+saveRDS(nbfit_sf, "nb_catch_parameters_sf_NO_19.rds")
+
 
 sf_mu <- nbfit_sf$estimate['mu']
 sf_mu
@@ -19,7 +20,7 @@ sf_size <- nbfit_sf$estimate['size']
 sf_size
 
 nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
-nbfit_bsb
+saveRDS(nbfit_bsb, "nb_catch_parameters_bsb_NO_19.rds")
 
 bsb_mu <- nbfit_bsb$estimate['mu']
 bsb_mu
@@ -45,7 +46,7 @@ bsb <- catch_data$bsb_tot_cat
 
 #estimate the nb parameters
 nbfit_sf = fitdistr(sf, "Negative Binomial")
-nbfit_sf
+saveRDS(nbfit_sf, "nb_catch_parameters_sf_NJ_19.rds")
 
 sf_mu <- nbfit_sf$estimate['mu']
 sf_mu
@@ -54,7 +55,7 @@ sf_size <- nbfit_sf$estimate['size']
 sf_size
 
 nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
-nbfit_bsb
+saveRDS(nbfit_bsb, "nb_catch_parameters_bsb_NJ_19.rds")
 
 bsb_mu <- nbfit_bsb$estimate['mu']
 bsb_mu
@@ -82,7 +83,7 @@ bsb <- catch_data$bsb_tot_cat
 
 #estimate the nb parameters
 nbfit_sf = fitdistr(sf, "Negative Binomial")
-nbfit_sf
+saveRDS(nbfit_sf, "nb_catch_parameters_sf_SO_19.rds")
 
 sf_mu <- nbfit_sf$estimate['mu']
 sf_mu
@@ -91,7 +92,7 @@ sf_size <- nbfit_sf$estimate['size']
 sf_size
 
 nbfit_bsb <- fitdistr(bsb, "Negative Binomial")
-nbfit_bsb
+saveRDS(nbfit_bsb, "nb_catch_parameters_bsb_SO_19.rds")
 
 bsb_mu <- nbfit_bsb$estimate['mu']
 bsb_mu
