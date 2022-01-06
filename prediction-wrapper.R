@@ -7,31 +7,32 @@
         # a) Create new catch-at-length/catch-per-trip distributions for summer flounder based on population numbers at length. 
         # a) Calcualte angler welfare/fishing effort changes and changes in catch
 
-profvis::profvis({
+#profvis::profvis({
 # Modeling wrapper test
 
 #load needed packages and install if not currently installed.
 pkgs_to_use <- c("tidyr",
-                 "reshape2",
-                 "splitstackshape",
-                 "doBy",
-                 "WriteXLS",
-                 'Rcpp',
-                 "ggplot2",
+                 "magrittr",
+                 #"reshape2",
+                 #"splitstackshape",
+                 #"doBy",
+                 #"WriteXLS",
+                 #'Rcpp',
+                 #"ggplot2",
                  "dplyr",
                  "rlist",
-                 "fitdistrplus",
-                 "MASS",
-                 "psych",
-                 "rgl",
+                 #"fitdistrplus",
+                 #"MASS",
+                 #"psych",
+                 #"rgl",
                  "copula",
-                 "VineCopula",
-                 "scales",
-                 "univariateML",
-                 "logspline",
+                 #"VineCopula",
+                 #"scales",
+                 #"univariateML",
+                 #"logspline",
                  "readr",
                  "data.table")
-install.packages(setdiff(pkgs_to_use, rownames(installed.packages())))  
+#install.packages(setdiff(pkgs_to_use, rownames(installed.packages())))  
 lapply(pkgs_to_use, library, character.only = TRUE)
 
 ### 
@@ -198,9 +199,8 @@ write.table(round(rbind(keep,release),3),file = "rec-catch.out", row.names = FAL
 
 #####
 # Stop the clock
-proc.time() - ptm
+#proc.time() - ptm
 
-})
 
 # ###
 # # Calculate ouput statisitics for calibration and prediction year
