@@ -7,7 +7,7 @@
         # a) Create new catch-at-length/catch-per-trip distributions for summer flounder based on population numbers at length. 
         # a) Calcualte angler welfare/fishing effort changes and changes in catch
 
-
+profvis::profvis({
 # Modeling wrapper test
 
 #load needed packages and install if not currently installed.
@@ -29,7 +29,8 @@ pkgs_to_use <- c("tidyr",
                  "scales",
                  "univariateML",
                  "logspline",
-                 "readr")
+                 "readr",
+                 "data.table")
 install.packages(setdiff(pkgs_to_use, rownames(installed.packages())))  
 lapply(pkgs_to_use, library, character.only = TRUE)
 
@@ -118,31 +119,33 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA","NC"),
 #                costs_new_all_MA = list(costs_new[[5]]),
 #                sf_catch_data_all = list(sf_catch_data_nj))
 
-source("prediction-all.R")
-
+#source("prediction-all.R")
+source("prediction-vec.R")
 
 ##########  need to add link to OM scenario regulations
 
 safe_predict_rec_catch <- purrr::safely(predict_rec_catch, otherwise = NA_real_)
 xx <- purrr::pmap(params, safe_predict_rec_catch)
 
-profvis::profvis(testMA <- predict_rec_catch(state1 = "MA",
-                        region1 = "NO",
-                        calibration_data_table = calibration_data_table,
-                        directed_trips_table = directed_trips_table,
-                        size_data_read = size_data_read,
-                        param_draws_MA = param_draws_all[[1]],
-                        costs_new_all_MA = costs_new[[1]],
-                        sf_catch_data_all = sf_catch_data_no))
 
-# xx <- predict_rec_catch(state1 = "NJ",
-#                         region1 = "NJ",
+# profvis::profvis(testMA <- predict_rec_catch(state1 = "MA",
+#                         region1 = "NO",
 #                         calibration_data_table = calibration_data_table,
 #                         directed_trips_table = directed_trips_table,
 #                         size_data_read = size_data_read,
-#                         param_draws_MA = param_draws_all[[5]],
-#                         costs_new_all_MA = costs_new[[5]],
-#                         sf_catch_data_all = sf_catch_data_nj)
+#                         param_draws_MA = param_draws_all[[1]],
+#                         costs_new_all_MA = costs_new[[1]],
+#                         sf_catch_data_all = sf_catch_data_no,
+#                         prop_bsb_keep = 0.33))
+# 
+# xx <- predict_rec_catch(state1 = "NC",
+#                         region1 = "SO",
+#                         calibration_data_table = calibration_data_table,
+#                         directed_trips_table = directed_trips_table,
+#                         size_data_read = size_data_read,
+#                         param_draws_MA = param_draws_all[[9]],
+#                         costs_new_all_MA = costs_new[[9]],
+#                         sf_catch_data_all = sf_catch_data_so)
 
 
 prediction_output_by_period <- purrr::map(xx, 1)
@@ -153,11 +156,11 @@ saveRDS(prediction_output_by_period, file = "prediction_output_by_period.rds")
 aggregate_prediction_output <- prediction_output_by_period %>% 
   list.stack(fill = TRUE) %>% 
   mutate_at(vars(contains("length")), replace_na, replace = 0) %>% 
-  dplyr::select(-state, -alt_regs, -period) %>% 
+  dplyr::select(-state, -alt_regs) %>%  #, -period) %>% 
   group_by(sim) %>% 
-  summarize_if(is.numeric, .funs = sum,na.rm=TRUE) %>% 
+  summarize_if(is.numeric, .funs = sum,na.rm=TRUE)# %>% 
   #dplyr::select(order(colnames(.))) %>% 
-  I()
+  #I()
 #  = aggregate(aggregate_prediction_output, by=list(aggregate_prediction_output$sim),FUN=sum, na.rm=TRUE)
 #write_xlsx(aggregate_prediction_output,"aggregate_prediction_output.xlsx")
 saveRDS(aggregate_prediction_output, file = "aggregate_prediction_output.rds")
@@ -168,27 +171,27 @@ pred_len <- tibble(aggregate_prediction_output) %>%
   dplyr::select(contains("length")) %>% 
   pivot_longer(cols = 1:ncol(.), names_to = "bin",values_to = "num") %>% 
   separate(bin, into =c("type","len"),sep = "_length_") %>% 
-  mutate(len = as.numeric(len)) %>% 
-  I()
+  mutate(len = as.numeric(len)) #%>% 
+  #I()
 pred_len
 out_lens <- tibble(type = rep(c("release","keep"),each=Nlen_in),
                    len = rep(lenbinuse,2)) %>% 
   left_join(pred_len) %>% 
-  replace_na(list(num=0)) %>% 
-  I()
+  replace_na(list(num=0)) #%>% 
+  #I()
 out_lens
 in2cm <- readr::read_csv("in2cm.csv", col_names = FALSE)[,-1]
 keep <- out_lens %>% 
   filter(type == "keep") %>% 
   dplyr::select(num) %>% 
-  unlist() %>%
-  I()
+  unlist()# %>%
+  #I()
 keep <- keep %*% t(in2cm)
 release <- out_lens %>% 
   filter(type == "release") %>% 
   dplyr::select(num) %>% 
-  unlist() %>%
-  I()
+  unlist() #%>%
+  #I()
 release <- release %*% t(in2cm)
 write.table(round(rbind(keep,release),3),file = "rec-catch.out", row.names = FALSE, col.names = FALSE)
 
@@ -197,7 +200,7 @@ write.table(round(rbind(keep,release),3),file = "rec-catch.out", row.names = FAL
 # Stop the clock
 proc.time() - ptm
 
-
+})
 
 # ###
 # # Calculate ouput statisitics for calibration and prediction year

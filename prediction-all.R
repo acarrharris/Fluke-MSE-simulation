@@ -26,7 +26,7 @@ predict_rec_catch <- function(state1 = "MA",
                                prop_bsb_keep = 0.33) {
    
 
-  # #MA test vals for running through function directly 
+  # #MA test vals for running through function directly
   # state1 = "MA"
   # region1 = "NO"
   # calibration_data_table = calibration_data_table
@@ -37,7 +37,7 @@ predict_rec_catch <- function(state1 = "MA",
   # sf_catch_data_all = sf_catch_data_no
   # prop_bsb_keep = 0.33
   # 
-  # profvis::profvis({ 
+  # profvis::profvis({
     
 # state1="MA"
 # region1="NO"
@@ -80,7 +80,7 @@ levels(periodz)
 for(p in levels(periodz)){
   directed_trips_p = subset(directed_trips, period == p)
   n_trips = floor(mean(directed_trips_p$dtrip_2019))
-  n_draws = floor(min(10000,n_trips*2.5 ))
+  n_draws = floor(min(1000,n_trips*2.5 ))
   fluke_bag = mean(directed_trips_p$fluke_bag)
   fluke_min = mean(directed_trips_p$fluke_min)
   fluke_max = mean(directed_trips_p$fluke_max)
@@ -384,7 +384,10 @@ for(p in levels(periodz)){
   
   cost_data = subset(costs_new_all_MA, period == p, select=-c(period, tot_sf_catch))
   #trip_data =  merge(pds,cost_data,by=c("tripid", "catch_draw"))
-  trip_data <- left_join(pds[[p]],cost_data,by=c("tripid", "catch_draw")) %>% 
+  # trip_data <- left_join(pds[[p]],cost_data,by=c("tripid", "catch_draw")) %>% 
+  #   mutate_if(is.numeric, replace_na, replace = 0) %>% 
+  #   I()
+  trip_data <- right_join(dfs_all %>% filter(period == p),cost_data,by=c("tripid", "catch_draw")) %>% 
     mutate_if(is.numeric, replace_na, replace = 0) %>% 
     I()
   #  trip_data[is.na(trip_data)] = 0
