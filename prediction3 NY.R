@@ -63,7 +63,7 @@ for(p in levels(periodz)){
   for(i in 1:10) {
     
     # Input catch-per-trip numbers 
-    sf_catch_data = data.frame(read_excel("predicted_catch_NY.xlsx"))                                                                            
+    sf_catch_data = readRDS("predicted_catch_NY.rds")                                                                            
     tot_sf_catch = sf_catch_data$sf_t_nb
     tot_bsb_catch = sf_catch_data$bsb_t_nb
     sf_catch_data = data.frame(tot_sf_catch,tot_bsb_catch)
@@ -95,7 +95,8 @@ for(p in levels(periodz)){
     # Assign a random uniform number to each fish caught, and bin that fish as harvested if it is above the 
     # adjust p* value, otherwise released. Fish caught above the bag limit are released. 
     
-    pstar = subset(data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx")), region==state1 & fitted_length==fluke_min)
+    pstar = readRDS("sf_fitted_sizes_y2plus.rds")
+    pstar=  subset(pstar, region==state1 & fitted_length==fluke_min)
     pstar = mean(pstar$cdf)
     
     #The following code executes if the seasonal period has a positive bag limit 

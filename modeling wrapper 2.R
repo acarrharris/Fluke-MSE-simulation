@@ -146,8 +146,8 @@ source("catch at length given stock structure - prediction.R")
 
 
 ##########  
-# run the simulation code under the new set of regulations
 
+# run the simulation code under the new set of regulations
 source("prediction3 MA.R")
 source("prediction3 RI.R")
 source("prediction3 CT.R")
