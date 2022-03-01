@@ -4,16 +4,18 @@
 # There are several pieces of information that vary by state or regions:
 #     By state: trip costs, percent of trips taken by each mode (used for assigning trip costs), 
 #               and regulations (which also vary within a a season for a given state)
-#     By region (MA-NY, NJ, DE-NC): catch-per-trip and catch-at-length distributions
+#     By state: catch-per-trip and catch-at-length distributions
 #     By region (MA-NY, NJ, DE-MD, VA-NC): utility parameters and target species 
 
 
 # This code requires the following data:
 # 1) The output from the calibration: calibration_output_by_period.xlsx
-# 2) Dataset containing the alternative regulations to be imposed: directed_trips_region - alternative regs test.xlsx
-# 3) Abundance adjusted catch-at-length for summer flounder. This is an output file from the script catch at length given stock structure - prediction.R
-#    For now, the catch-at-length disitributions in this file are identical to the calibration catch-at-lengths: sf_fitted_sizes_y2plus.xlsx
-# 4) Set of utility parameters draws from one of the four surveys, for MA-NY states: utility_param_draws_MA_NY.xlsx
+# 2) Dataset containing the alternative regulations to be imposed
+# 3) Abundance adjusted catch-at-length for summer flounder. 
+#    This consists of two output files from the "catch at length given stock structure" script:
+#       a) "predicted_catch_(STATE)" which gives catch-per-trip based on population abundance
+#       b)  "sf_fitted_sizes_y2plus.xlsx" which gives a new size distribution based on historical recreational 
+#           selectivity and projected population abundances at length. 
 # 
 predict_rec_catch <- function(state1 = "MA", 
                                region1 = "NO", 
