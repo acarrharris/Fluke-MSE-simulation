@@ -30,16 +30,6 @@ min_period=min(directed_trips$period)
 max_period=max(directed_trips$period)
 
 
-# Import trip cost data
-trip_cost_data = data.frame(read_excel("trip_costs_NE.xlsx"))                                                                            
-trip_cost_data = subset(trip_cost_data, state == state1)
-rownames(trip_cost_data) = NULL
-
-trip_cost_data_shore = subset(trip_cost_data, mode == "shore")
-trip_cost_data_privt = subset(trip_cost_data, mode == "privt")
-trip_cost_data_headb = subset(trip_cost_data, mode == "headb")
-trip_cost_data_chart = subset(trip_cost_data, mode == "chart")
-
 
 # Set up an output file for the separately simulated within-season regulatory periods  
 pds = list()
@@ -355,28 +345,18 @@ costs_new_MA = list()
 pds_new = list()
 for(p in levels(periodz)){
   
+  
   directed_trips_p = subset(directed_trips, period == p)
   n_trips = mean(directed_trips_p$dtrip)  
   
-  # Add trip costs. Assign choice occasion a shore or boat trip cost in proportion to estimated number of
-  # directed fluke trips by mode. I copied the proportions below from directed_trips_by_state_mode.dta
+  # Add trip costs. These are mean and sd estimates from over all modes from the expenditure survey
   pds=subset(pds_all, period==p)
   
-  max_trip=max(pds$tripid)
-  charter=round(max_trip*.04)
-  headboat=round(max_trip*.02)
-  private=round(max_trip*.68)
-  shore = max_trip-charter-headboat-private
-  
-  charter_draws = trip_cost_data_chart[sample(nrow(trip_cost_data_chart), charter), ]
-  headboat_draws = trip_cost_data_headb[sample(nrow(trip_cost_data_headb), headboat), ]
-  privt_draws = trip_cost_data_privt[sample(nrow(trip_cost_data_privt), private), ]
-  shore_draws = trip_cost_data_shore[sample(nrow(trip_cost_data_shore), shore), ]
-  
-  cost_data = bind_rows(charter_draws, headboat_draws,privt_draws, shore_draws )
-  cost_data$tripid = 1:nrow(cost_data)
-  cost_data= subset(cost_data, select=c(tripid, cost))
-  trip_data =  merge(pds,cost_data,by="tripid")
+  trip_costs=data.frame(read_excel("trip_costs_state_summary.xlsx"))                
+  mean_cost=trip_costs$mean_cost[trip_costs$state==state1]
+  sd_cost=trip_costs$sd_cost[trip_costs$state==state1]
+  trip_data=pds
+  trip_data$cost=rnorm(nrow(trip_data), mean=mean_cost,sd= sd_cost)
   trip_data[is.na(trip_data)] = 0
   
   
