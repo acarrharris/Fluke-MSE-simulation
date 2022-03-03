@@ -70,7 +70,23 @@ om_length_in <- om_length_cm[-1] %*% t(cm2in)
 source("catch at length given stock structure - prediction.R")
 
 #catch data
-sf_catch_data_no <- readRDS("predicted_catch_NO.xlsx") %>% 
+sf_catch_data_ma <- readRDS("predicted_catch_MA.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+sf_catch_data_ri <- readRDS("predicted_catch_RI.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+sf_catch_data_ct <- readRDS("predicted_catch_CT.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+
+sf_catch_data_ny <- readRDS("predicted_catch_NY.rds") %>% 
   tibble() %>% 
   rename(tot_sf_catch = sf_t_nb,
          tot_bsb_catch = bsb_t_nb) %>%
@@ -80,12 +96,22 @@ sf_catch_data_nj <- readRDS("predicted_catch_NJ.rds") %>%
   rename(tot_sf_catch = sf_t_nb,
          tot_bsb_catch = bsb_t_nb) %>%
   I()
-sf_catch_data_so <- readRDS("predicted_catch_SO.rds") %>% 
+sf_catch_data_de <- readRDS("predicted_catch_DE.rds") %>% 
   tibble() %>% 
   rename(tot_sf_catch = sf_t_nb,
          tot_bsb_catch = bsb_t_nb) %>%
   I()
 
+sf_catch_data_md <- readRDS("predicted_catch_MD.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+sf_catch_data_va <- readRDS("predicted_catch_VA.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
 
 # Read-in the current population length composition  #don't need this in final as it's already an object.
 #size_data_read <- data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx"))
