@@ -117,7 +117,7 @@ for(p in levels(periodz)){
       sf_catch_data1$release = ifelse(sf_catch_data1$keep==0, 1,0) 
       
       sf_catch_data1=subset(sf_catch_data1, select=c(tripid, keep, release))
-      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data$tripid),FUN=sum, na.rm=TRUE)
+      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data1$tripid),FUN=sum, na.rm=TRUE)
       sf_catch_data1 <-subset(sf_catch_data1, select=c(Group.1, keep, release))
       names(sf_catch_data1)[names(sf_catch_data1) == "Group.1"] = "tripid"
       names(sf_catch_data1)[names(sf_catch_data1) == "keep"] = "tot_keep"

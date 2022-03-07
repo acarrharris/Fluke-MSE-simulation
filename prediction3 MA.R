@@ -116,7 +116,7 @@ for(p in levels(periodz)){
       sf_catch_data1$release = ifelse(sf_catch_data1$keep==0, 1,0) 
       
       sf_catch_data1=subset(sf_catch_data1, select=c(tripid, keep, release))
-      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data$tripid),FUN=sum, na.rm=TRUE)
+      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data1$tripid),FUN=sum, na.rm=TRUE)
       sf_catch_data1 <-subset(sf_catch_data1, select=c(Group.1, keep, release))
       names(sf_catch_data1)[names(sf_catch_data1) == "Group.1"] = "tripid"
       names(sf_catch_data1)[names(sf_catch_data1) == "keep"] = "tot_keep"
@@ -126,7 +126,7 @@ for(p in levels(periodz)){
       # After assigning each fish caught as kept or released, we have to assign sizes to those fish.
       # To do so, we parse out the full catch-at-length distribution into catch-at-length above the min. size limit (keep) 
       # and catch-at-length below the minimum size limit (release). We then adjust these probabilities into full harvest-at-length 
-      # and release-at-length distributions, and randomly draw from them to assign a size to each fish harvested or released. 
+      # and release-at-length probability distributions, and randomly draw from them to assign a size to each fish harvested or released. 
       
       
       #make a dataset of expanded keeps and releases by tripid
