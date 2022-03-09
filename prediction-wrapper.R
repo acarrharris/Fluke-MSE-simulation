@@ -117,16 +117,19 @@ sf_catch_data_va <- readRDS("predicted_catch_VA.rds") %>%
 #size_data_read <- data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx"))
 size_data_read <- readRDS("sf_fitted_sizes_y2plus.rds") %>% tibble()
 
-# loop over states
-params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA","NC"),
-               region1 = c(rep("NO",4),"NJ",rep("SO",4)),
-               calibration_data_table = rep(list(calibration_data_table),9),
-               directed_trips_table = rep(list(directed_trips_table),9),
-               size_data_read = rep(list(size_data_read),9),
+# loop over states(NC omitted for now)
+params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA"),
+               region1 = c(rep("NO",4),"NJ",rep("SO",3)),
+               calibration_data_table = rep(list(calibration_data_table),8),
+               directed_trips_table = rep(list(directed_trips_table),8),
+               size_data_read = rep(list(size_data_read),8),
                param_draws_MA = param_draws_all,
                costs_new_all_MA = costs_new,
-               sf_catch_data_all = c(rep(list(sf_catch_data_no),4),list(sf_catch_data_nj),rep(list(sf_catch_data_so),4)),
-               prop_bsb_keep = rep(0.33,9))  # add Lou's p* values here!
+               sf_catch_data_all = c(list(sf_catch_data_ma),list(sf_catch_data_ri),
+                                     list(sf_catch_data_ct),list(sf_catch_data_ny),
+                                     list(sf_catch_data_nj),list(sf_catch_data_de),
+                                     list(sf_catch_data_md),list(sf_catch_data_va)),
+               prop_bsb_keep = c(.53, .38, .7, .83, .92, .942, .96, .92))  # add Lou's p* values here!
 
 # params <- list(state1 = "MA",
 #                region1 = "NO",
