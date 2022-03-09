@@ -23,18 +23,18 @@ predict_rec_catch <- function(state1 = "MA",
                                param_draws_MA = NULL,
                                costs_new_all_MA = NULL,
                                sf_catch_data_all = NULL,
-                               prop_bsb_keep = 0.33) {
+                               prop_bsb_keep = 0.53) {
    
 # 
-#   #MA test vals for running through function directly
-#   state1 = "MA"
-#   region1 = "NO"
-#   calibration_data_table = calibration_data_table
-#   directed_trips_table = directed_trips_table
-#   size_data_read = size_data_read
-#   param_draws_MA = param_draws_all[[1]]
-#   costs_new_all_MA = costs_new[[1]]
-#   sf_catch_data_all = sf_catch_data_no
+  #MA test vals for running through function directly
+  # state1 = "MA"
+  # region1 = "NO"
+  # calibration_data_table = calibration_data_table
+  # directed_trips_table = directed_trips_table
+  # size_data_read = size_data_read
+  # param_draws_MA = param_draws_all[[1]]
+  # costs_new_all_MA = costs_new[[1]]
+  # sf_catch_data_all = sf_catch_data_no
    # prop_bsb_keep = 0.33
    # state1 = "NC"
    # region1 = "SO"
@@ -54,7 +54,7 @@ calibration_data <- calibration_data_table %>% tibble() %>% dplyr::filter(state 
   dplyr::select(period, sim, state, n_choice_occasions)
 directed_trips <- directed_trips_table %>% tibble() %>% dplyr::filter(state == state1)
 #size_data <- readRDS("sf_fitted_sizes_y2plus.rds") %>% tibble() %>% filter(region == region1)
-size_data <- size_data_read %>% filter(region == region1)
+size_data <- size_data_read %>% filter(region == state1)
 #param_draws_MA <- param_draws_all[[1]]
 #costs_new_all_MA <- costs_new[[1]]
 # sf_catch_data_all <- readRDS("predicted_catch_NO.xlsx") %>% 
@@ -334,6 +334,9 @@ if (region1 == "NO") {
   names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_scup_base"] = "tot_keep_scup"
   names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_scup_base"] = "tot_rel_scup"
 }
+
+
+
 if (region1 == "NJ") {
   bsb_sc_data=subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw,tripid,tot_keep_scup_base, tot_rel_scup_base, 
                                                                    tot_keep_bsb_base, tot_rel_bsb_base,
@@ -557,7 +560,7 @@ mean_trip_data$striper_blue[mean_trip_data$alt==2] = 1
 mean_trip_data$vA_optout= mean_trip_data$beta_opt_out*mean_trip_data$opt_out 
 mean_trip_data$vA_striper_blue= mean_trip_data$beta_striper_blue*mean_trip_data$striper_blue 
 
-#Now put these three values in the same column, exponentiate, and caluculate their sum (vA_col_sum)
+#Now put these three values in the same column, exponentiate, and calculate their sum (vA_col_sum)
 mean_trip_data$vA[mean_trip_data$alt!=1] <- 0
 mean_trip_data$v0[mean_trip_data$alt!=1] <- 0
 
