@@ -68,16 +68,14 @@ source("calibration4 NJ.R")
 source("calibration4 DE.R")
 source("calibration4 MD.R")
 source("calibration4 VA.R")
-#source("calibration4 NC.R")
+source("calibration4 NC.R")
   
 
 # Combine the results  
-# calibration_output_by_period = as.data.frame(bind_rows(pds_new_all_MA, pds_new_all_RI, pds_new_all_CT,
-#                                                        pds_new_all_NY, pds_new_all_NJ, pds_new_all_DE,
-#                                                        pds_new_all_MD, pds_new_all_VA, pds_new_all_NC))
 calibration_output_by_period = as.data.frame(bind_rows(pds_new_all_MA, pds_new_all_RI, pds_new_all_CT,
                                                        pds_new_all_NY, pds_new_all_NJ, pds_new_all_DE,
-                                                       pds_new_all_MD, pds_new_all_VA))
+                                                       pds_new_all_MD, pds_new_all_VA, pds_new_all_NC))
+
 
 calibration_output_by_period[is.na(calibration_output_by_period)] = 0
 write_xlsx(calibration_output_by_period,"calibration_output_by_period.xlsx")
@@ -116,7 +114,7 @@ costs_all[[5]] <- costs_new_all_NJ
 costs_all[[6]] <- costs_new_all_DE
 costs_all[[7]] <- costs_new_all_MD
 costs_all[[8]] <- costs_new_all_VA
-#costs_all[[9]] <- costs_new_all_NC
+costs_all[[9]] <- costs_new_all_NC
 saveRDS(costs_all, file = "costs_all.rds")
 
 param_draws_all <- NULL
@@ -128,7 +126,7 @@ param_draws_all[[5]] <- param_draws_NJ
 param_draws_all[[6]] <- param_draws_DE
 param_draws_all[[7]] <- param_draws_MD
 param_draws_all[[8]] <- param_draws_VA
-#param_draws_all[[9]] <- param_draws_NC
+param_draws_all[[9]] <- param_draws_NC
 saveRDS(param_draws_all, file = "param_draws_all.rds")
 
 
@@ -156,16 +154,14 @@ source("prediction3 NJ.R")
 source("prediction3 DE.R")
 source("prediction3 MD.R")
 source("prediction3 VA.R")
-#source("prediction3 NC.R")
+source("prediction3 NC.R")
 
-
-# prediction_output_by_period = as.data.frame(bind_rows(pds_new_all_MA, pds_new_all_RI, pds_new_all_CT,
-#                                                       pds_new_all_NY, pds_new_all_NJ, pds_new_all_DE,
-#                                                       pds_new_all_MD, pds_new_all_VA, pds_new_all_NC))
 
 prediction_output_by_period = as.data.frame(bind_rows(pds_new_all_MA, pds_new_all_RI, pds_new_all_CT,
                                                       pds_new_all_NY, pds_new_all_NJ, pds_new_all_DE,
-                                                      pds_new_all_MD, pds_new_all_VA))
+                                                      pds_new_all_MD, pds_new_all_VA, pds_new_all_NC))
+
+
 
 prediction_output_by_period[is.na(prediction_output_by_period)] = 0
 write_xlsx(prediction_output_by_period,"prediction_output_by_period.xlsx")
