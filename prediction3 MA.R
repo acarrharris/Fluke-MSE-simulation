@@ -239,6 +239,7 @@ for(p in levels(periodz)){
       
     }
     
+    # analgous code for closed seasons 
     if(fluke_bag==0){
       
       sf_catch_data1= as.data.frame(sf_catch_data)  
@@ -260,7 +261,7 @@ for(p in levels(periodz)){
       sf_rel_numbers$fishid = 1:nrow(sf_rel_numbers)
       
       
-      # Import size distribution, draw from the full catch at length distribution
+      # Import size distribution, draw from the FULL catch at length distribution (since the season is closed and no fish can be kept regardless of size)
       # release sizes
       sf_rel_sizes = subset(data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx")), region==state1)
       sf_rel_sizes$adjusted_prob=sf_rel_sizes$fitted_prob/sum(sf_rel_sizes$fitted_prob)
