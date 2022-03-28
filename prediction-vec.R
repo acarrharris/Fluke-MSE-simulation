@@ -171,7 +171,7 @@ sf_catch_data$fishid <- 1:nrow(sf_catch_data)
 
 # Here we input the adjusted summer flounder catch-at-length data and follow the same routine as in the calibration year:
 # Assign a random uniform number to each fish caught, and bin that fish as harvested if it is above the 
-# adjust p* value, otherwise released. Fish caught above the bag limit are released. 
+# adjust p* value, otherwise released. The trip ends after the bag limit is released, but this assumption can be turned off.  
 
 pstar = subset(data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx")), region==state1 & fitted_length==fluke_min)
 pstar = mean(pstar$cdf)
@@ -186,7 +186,7 @@ if(fluke_bag>0){
   sf_catch_data1$csum_keep <- ave(sf_catch_data1$keep, sf_catch_data1$tripid, FUN=cumsum)
   sf_catch_data1$keep_adj = ifelse(sf_catch_data1$csum_keep>fluke_bag, 0,sf_catch_data1$keep)
   
-  #Add the following lines to end the trip once the bag limit is reached (rather than continuing to discard)
+  #Include the following lines to end the trip once the bag limit is reached (rather than continuing to discard)
   ###
   sf_catch_data1$post_bag_fish=ifelse(sf_catch_data1$csum_keep>fluke_bag, 1,0)
   sf_catch_data1= subset(sf_catch_data1,post_bag_fish==0 )
@@ -388,9 +388,10 @@ if(fluke_bag==0){
 #########################
 
 
-#draw sizes for black sea bass catch
+#draw black sea bass catch
 # GF check here 
-# Black sea bass catch should be included in the sf_catch_data_all file. Need to properly locate in the following line. 
+# Black sea bass catch should be included in the sf_catch_data_all file. Need to properly locate it in the following line of code. 
+# I do see below in the code where GF added the black sea bass catch, so not sure if this step is necessary. 
 bsb_catch_data =subset(sf_bsb_catch_data, select=c(tripid, tot_bsb_catch))
 bsb_catch_data = bsb_catch_data[!duplicated(bsb_catch_data), ]
 
