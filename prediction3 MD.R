@@ -62,7 +62,7 @@ for(p in levels(periodz)){
   for(i in 1:10) {
     
     # Input catch-per-trip numbers 
-    sf_catch_data = readRDS("predicted_catch_MD.rds")                                                                            
+    sf_catch_data = data.frame(read_excel("predicted_catch_MD.xlsx"))                                                                            
     tot_sf_catch = sf_catch_data$sf_t_nb
     tot_bsb_catch = sf_catch_data$bsb_t_nb
     sf_catch_data = data.frame(tot_sf_catch,tot_bsb_catch)
@@ -94,8 +94,7 @@ for(p in levels(periodz)){
     # Assign a random uniform number to each fish caught, and bin that fish as harvested if it is above the 
     # adjust p* value, otherwise released. Fish caught above the bag limit are released. 
     
-    pstar = readRDS("sf_fitted_sizes_y2plus.rds")
-    pstar=  subset(pstar, region==state1 & fitted_length==fluke_min)
+    pstar = subset(data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx")), region==state1 & fitted_length==fluke_min)
     pstar = mean(pstar$cdf)
     
     #The following code executes if the seasonal period has a positive bag limit 
@@ -107,6 +106,14 @@ for(p in levels(periodz)){
       
       sf_catch_data1$csum_keep <- ave(sf_catch_data1$keep, sf_catch_data1$tripid, FUN=cumsum)
       sf_catch_data1$keep_adj = ifelse(sf_catch_data1$csum_keep>fluke_bag, 0,sf_catch_data1$keep)
+      
+      #Add the following lines to end the trip once the bag limit is reached (rather than continuing to discard)
+      ###
+      sf_catch_data1$post_bag_fish=ifelse(sf_catch_data1$csum_keep>fluke_bag, 1,0)
+      sf_catch_data1= subset(sf_catch_data1,post_bag_fish==0 )
+      sf_catch_data1 <- subset(sf_catch_data1, select=-c(post_bag_fish ))
+      ###
+      
       sf_catch_data1 <- subset(sf_catch_data1, select=-c(keep, csum_keep))
       names(sf_catch_data1)[names(sf_catch_data1) == "keep_adj"] = "keep"
       
