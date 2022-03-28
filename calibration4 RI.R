@@ -31,7 +31,6 @@ max_period=max(directed_trips$period)
 
 
 
-
 # Set up an output file for the separately simulated within-season regulatory periods  
 pds = list()
 
@@ -93,6 +92,14 @@ for(p in levels(periodz)){
       
       sf_catch_data1$csum_keep <- ave(sf_catch_data1$keep, sf_catch_data1$tripid, FUN=cumsum)
       sf_catch_data1$keep_adj = ifelse(sf_catch_data1$csum_keep>fluke_bag, 0,sf_catch_data1$keep)
+      
+      #Add the following lines to end the trip once the bag limit is reached (rather than continuing to discard)
+      ###
+      sf_catch_data1$post_bag_fish=ifelse(sf_catch_data1$csum_keep>fluke_bag, 1,0)
+      sf_catch_data1= subset(sf_catch_data1,post_bag_fish==0 )
+      sf_catch_data1 <- subset(sf_catch_data1, select=-c(post_bag_fish ))
+      ###
+      
       sf_catch_data1 <- subset(sf_catch_data1, select=-c(keep, csum_keep))
       names(sf_catch_data1)[names(sf_catch_data1) == "keep_adj"] = "keep"
       
@@ -100,7 +107,7 @@ for(p in levels(periodz)){
       sf_catch_data1$release = ifelse(sf_catch_data1$keep==0, 1,0) 
       
       sf_catch_data1=subset(sf_catch_data1, select=c(tripid, keep, release))
-      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data$tripid),FUN=sum, na.rm=TRUE)
+      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data1$tripid),FUN=sum, na.rm=TRUE)
       sf_catch_data1 <-subset(sf_catch_data1, select=c(Group.1, keep, release))
       names(sf_catch_data1)[names(sf_catch_data1) == "Group.1"] = "tripid"
       names(sf_catch_data1)[names(sf_catch_data1) == "keep"] = "tot_keep"
