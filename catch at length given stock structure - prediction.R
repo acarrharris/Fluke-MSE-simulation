@@ -37,6 +37,9 @@
 
 numbers_at_length <- tibble(l_in_bin = lenbinuse,
                             N_l = om_length_in[1,])
+
+#numbers_at_length <- tibble::as_tibble(lch_nums)
+
 #Translate numbers from 1,000's of fish
 numbers_at_length$N_l=numbers_at_length$N_l*1000
 sum(numbers_at_length$N_l)
@@ -44,8 +47,10 @@ sum(numbers_at_length$N_l)
 
 # Import and merge the selectivity data to this file 
 #selectivity = data.frame(read_excel("rec_selectivity.xlsx"))
-selectivity <- readRDS("rec_selectivity.rds")
+selectivity <- readRDS("rec_selectivity.rds") %>% 
+  mutate(C_l = observed_C_l)
 selectivity <-subset(selectivity, select=c(l_in_bin, region, q, E, C_l))
+  
 numbers_at_length_new =  merge(selectivity,numbers_at_length,by="l_in_bin", all.x=TRUE, all.y=TRUE)
 
 numbers_at_length_new[is.na(numbers_at_length_new)] = 0

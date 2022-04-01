@@ -23,9 +23,10 @@ predict_rec_catch <- function(state1 = "MA",
                                param_draws_MA = NULL,
                                costs_new_all_MA = NULL,
                                sf_catch_data_all = NULL,
-                               prop_bsb_keep = 0.33) {
+                               prop_bsb_keep = 0.33,
+                               dchoose = 1) {
    
-# 
+
 #   #MA test vals for running through function directly
 #   state1 = "MA"
 #   region1 = "NO"
@@ -35,7 +36,8 @@ predict_rec_catch <- function(state1 = "MA",
 #   param_draws_MA = param_draws_all[[1]]
 #   costs_new_all_MA = costs_new[[1]]
 #   sf_catch_data_all = sf_catch_data_no
-   # prop_bsb_keep = 0.33
+# prop_bsb_keep = 0.33
+# dchoose = 546
    # state1 = "NC"
    # region1 = "SO"
    # calibration_data_table = calibration_data_table
@@ -434,10 +436,11 @@ trip_data <- right_join(dfs,cost_data,by=c("period", "tripid", "catch_draw")) %>
 parameter_draws = list()
 
 #for(d in 1:1) {
-d = 1  
+d <- 1
+#dchoose = 1  
 # Use the previously drawn set of utility parameters to calculate expected utility, welfare, and effort in the prediction year
 #param_draws_MA_prediction = subset(param_draws_MA, parameter_draw=i)
-param_draws_MA_prediction = param_draws_MA %>% tibble() %>% filter(parameter_draw==1)
+param_draws_MA_prediction = param_draws_MA %>% tibble() %>% filter(parameter_draw==dchoose)
 #trip_data =  merge(param_draws_MA_prediction,trip_data,by="tripid")
 trip_data <- left_join(param_draws_MA_prediction,trip_data,by="tripid")
 
@@ -631,7 +634,7 @@ mean_trip_data[,list_names] <- mean_trip_data$probA*mean_trip_data[,list_names]
 #Now multiply the trip outcomes (catch, trip probabilities) for each choice occasion in 
 #mean_trip_pool by the expansion factor (expand), so that  each choice occasion represents a certain number of choice occasions
 sims=subset(calibration_data, sim==d) %>% 
-  left_join(mean_trip_data %>% count(period, name = "ndraws") %>% mutate(period = as.character(period))) %>% 
+  left_join(mean_trip_data %>% count(period, name = "ndraws") %>% mutate(period = as.character(period)), by = "period") %>% 
   mutate(expand = n_choice_occasions/ndraws)
 #n_choice_occasions = mean(sims$n_choice_occasions)
 #ndraws = nrow(mean_trip_data)

@@ -40,6 +40,7 @@ lapply(pkgs_to_use, library, character.only = TRUE)
 # Input the data set containing alternative regulations and directed trips (directed_trips_region - alternative regs test.xlsx)
 #directed_trips_table <- data.frame(read_excel("directed_trips_region - alternative regs test.xlsx"))
 directed_trips_table <- readRDS("directed_trips_regions_bimonthly.rds")
+directed_trips_table <- readRDS("coastwide_regulations_scenario.rds")
 # Input the calibration output which contains the number of choice occasions needed to simulate
 #calibration_data = data.frame(read_excel("calibration_output_by_period.xlsx"))
 calibration_data_table <- readRDS("calibration_output_by_period.rds")
@@ -100,8 +101,17 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA","NC"),
                param_draws_MA = param_draws_all,
                costs_new_all_MA = costs_new,
                sf_catch_data_all = c(rep(list(sf_catch_data_no),4),list(sf_catch_data_nj),rep(list(sf_catch_data_so),4)),
-               prop_bsb_keep = rep(0.33,9))  # add Lou's p* values here!
-
+               prop_bsb_keep = #rep(0.33,9))  # add Lou's p* values here!
+                 c(1-0.67,
+                   1-0.66,
+                   1-0.77,
+                   1-0.87,
+                   1-0.93,
+                   1-0.945,
+                   1-0.96,
+                   1-0.92,
+                   0.001),
+               dchoose = rep(1,9)) #1-1.1))
 # params <- list(state1 = "MA",
 #                region1 = "NO",
 #                calibration_data_table = list(calibration_data_table),
@@ -109,7 +119,9 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA","NC"),
 #                size_data_read = list(size_data_read),
 #                param_draws_MA = list(param_draws_all[[1]]),
 #                costs_new_all_MA = list(costs_new[[1]]),
-#                sf_catch_data_all = list(sf_catch_data_no))
+#                sf_catch_data_all = list(sf_catch_data_no),
+#                prop_bsb_keep = 0.33,
+#                dchoose = 1)
 # 
 # params <- list(state1 = "NJ",
 #                region1 = "NJ",
@@ -123,8 +135,15 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA","NC"),
 #source("prediction-all.R")
 source("prediction-vec.R")
 
+# set.seed(1989)
+# simkeep <- NULL
+# simrel <- NULL
+# simagg <- NULL
+# for (jsim in 1:30) {
 ##########  need to add link to OM scenario regulations
 
+#params$dchoose <- rep(sample(1:1000,1),9)
+  
 safe_predict_rec_catch <- purrr::safely(predict_rec_catch, otherwise = NA_real_)
 xx <- purrr::pmap(params, safe_predict_rec_catch)
 
@@ -174,13 +193,13 @@ pred_len <- tibble(aggregate_prediction_output) %>%
   separate(bin, into =c("type","len"),sep = "_length_") %>% 
   mutate(len = as.numeric(len)) #%>% 
   #I()
-pred_len
+#pred_len
 out_lens <- tibble(type = rep(c("release","keep"),each=Nlen_in),
                    len = rep(lenbinuse,2)) %>% 
   left_join(pred_len) %>% 
   replace_na(list(num=0)) #%>% 
   #I()
-out_lens
+#out_lens
 in2cm <- readr::read_csv("in2cm.csv", col_names = FALSE)[,-1]
 keep <- out_lens %>% 
   filter(type == "keep") %>% 
@@ -194,9 +213,18 @@ release <- out_lens %>%
   unlist() #%>%
   #I()
 release <- release %*% t(in2cm)
-write.table(round(rbind(keep,release),3),file = "rec-catch.out", row.names = FALSE, col.names = FALSE)
+write.table(round(rbind(keep,release)/1000,3),file = "rec-catch.out", row.names = FALSE, col.names = FALSE)
+write(with(aggregate_prediction_output,observed_trips),file = "rec-catch.out", append = TRUE)
 
-
+# print("keep")
+# print(keep)
+# print("release")
+# print(release)
+# compare.results[[jsim]] <- NULL
+# simkeep <- rbind(simkeep,keep)
+# simrel <- rbind(simrel,release)
+# simagg <- rbind(simagg, select(aggregate_prediction_output, -starts_with("keep_"), -starts_with("release_")))
+# }
 #####
 # Stop the clock
 #proc.time() - ptm
