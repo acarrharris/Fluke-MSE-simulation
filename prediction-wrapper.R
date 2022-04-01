@@ -71,7 +71,23 @@ om_length_in <- om_length_cm[-1] %*% t(cm2in)
 source("catch at length given stock structure - prediction.R")
 
 #catch data
-sf_catch_data_no <- readRDS("predicted_catch_NO.xlsx") %>% 
+sf_catch_data_ma <- readRDS("predicted_catch_MA.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+sf_catch_data_ri <- readRDS("predicted_catch_RI.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+sf_catch_data_ct <- readRDS("predicted_catch_CT.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+
+sf_catch_data_ny <- readRDS("predicted_catch_NY.rds") %>% 
   tibble() %>% 
   rename(tot_sf_catch = sf_t_nb,
          tot_bsb_catch = bsb_t_nb) %>%
@@ -81,26 +97,47 @@ sf_catch_data_nj <- readRDS("predicted_catch_NJ.rds") %>%
   rename(tot_sf_catch = sf_t_nb,
          tot_bsb_catch = bsb_t_nb) %>%
   I()
-sf_catch_data_so <- readRDS("predicted_catch_SO.rds") %>% 
+sf_catch_data_de <- readRDS("predicted_catch_DE.rds") %>% 
   tibble() %>% 
   rename(tot_sf_catch = sf_t_nb,
          tot_bsb_catch = bsb_t_nb) %>%
   I()
 
+sf_catch_data_md <- readRDS("predicted_catch_MD.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+sf_catch_data_va <- readRDS("predicted_catch_VA.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
+
+sf_catch_data_nc <- readRDS("predicted_catch_NC.rds") %>% 
+  tibble() %>% 
+  rename(tot_sf_catch = sf_t_nb,
+         tot_bsb_catch = bsb_t_nb) %>%
+  I()
 
 # Read-in the current population length composition  #don't need this in final as it's already an object.
 #size_data_read <- data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx"))
 size_data_read <- readRDS("sf_fitted_sizes_y2plus.rds") %>% tibble()
 
-# loop over states
-params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA","NC"),
+# loop over states(NC omitted for now)
+params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"),
                region1 = c(rep("NO",4),"NJ",rep("SO",4)),
                calibration_data_table = rep(list(calibration_data_table),9),
                directed_trips_table = rep(list(directed_trips_table),9),
                size_data_read = rep(list(size_data_read),9),
                param_draws_MA = param_draws_all,
                costs_new_all_MA = costs_new,
-               sf_catch_data_all = c(rep(list(sf_catch_data_no),4),list(sf_catch_data_nj),rep(list(sf_catch_data_so),4)),
+
+               #sf_catch_data_all = c(rep(list(sf_catch_data_no),4),list(sf_catch_data_nj),rep(list(sf_catch_data_so),4)),
+               sf_catch_data_all = c(list(sf_catch_data_ma),list(sf_catch_data_ri),
+                                     list(sf_catch_data_ct),list(sf_catch_data_ny),
+                                     list(sf_catch_data_nj),list(sf_catch_data_de),
+                                     list(sf_catch_data_md),list(sf_catch_data_va), list(sf_catch_data_nc)),
                prop_bsb_keep = #rep(0.33,9))  # add Lou's p* values here!
                  c(1-0.67,
                    1-0.66,
@@ -111,7 +148,9 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA","NC"),
                    1-0.96,
                    1-0.92,
                    0.001),
+               #prop_bsb_keep = c(.53, .38, .7, .83, .92, .942, .96, .92, 1),
                dchoose = rep(1,9)) #1-1.1))
+               
 # params <- list(state1 = "MA",
 #                region1 = "NO",
 #                calibration_data_table = list(calibration_data_table),

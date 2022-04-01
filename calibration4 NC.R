@@ -3,17 +3,14 @@
 # There are several pieces of information that vary by state or regions:
 #     By state: trip costs, percent of trips taken by each mode (used for assigning trip costs), 
 #               and regulations (which also vary within a a season for a given state)
-#     By region (MA-NY, NJ, DE-NC): catch-per-trip and catch-at-length distributions
+#     By state or region (MA-NY, NJ, DE-NC): sf catch-per-trip and catch-at-length distributions
 #     By region (MA-NY, NJ, DE-MD, VA-NC): utility parameters and target species 
 
 # This code requires the following data:
-# 1) Directed summer flounder by regualtory period in the baseline year: directed_trips_region.xlsx
+# 1) Directed summer flounder by regulatory period in the baseline year: directed_trips_region_XX.xlsx
 # 2) Distribution of trip costs by mode in each state: trip_costs_NE.xlsx
-# 3) Catch-per-trip of SF and BSB from the copula model: MANY_catch_data_sim1.xlsx
-# 4) Catch-at-length for each of the species included in the models: fitted_sizes_region_raw.xlsx
-# 5) Catch-per-trip of species other than SF and BSB: other_species_fitted_catch.xlsx
-# 6) Set of utility parameters draws from one of the four surveys, for MA-NY states: utility_param_draws_MA_NY.xlsx
-
+# 3) Catch-per-trip of SF and BSB from the copula model: XX_catch_data_sim1.xlsx
+# 4) Catch-per-trip of species other than SF and BSB: other_species_fitted_catch.xlsx
 
 state1="NC"
 region1="SO"
@@ -33,14 +30,6 @@ min_period=min(directed_trips$period)
 max_period=max(directed_trips$period)
 
 
-# Import trip cost data
-trip_cost_data = data.frame(read_excel("trip_costs_NE.xlsx"))                                                                            
-trip_cost_data = subset(trip_cost_data, state == state1)
-rownames(trip_cost_data) = NULL
-
-trip_cost_data_shore = subset(trip_cost_data, mode == "shore")
-trip_cost_data_privt = subset(trip_cost_data, mode == "privt")
-trip_cost_data_chart = subset(trip_cost_data, mode == "chart")
 
 
 # Set up an output file for the separately simulated within-season regulatory periods  
@@ -103,11 +92,25 @@ for(p in levels(periodz)){
       
       sf_catch_data1= as.data.frame(sf_catch_data)  
       sf_catch_data1$uniform=runif(nrow(sf_catch_data1))
-      sf_catch_data1$keep = ifelse(sf_catch_data1$uniform>=.25, 1,0) 
+      sf_catch_data1$keep = ifelse(sf_catch_data1$uniform>=0.07, 1,0) 
+      
+      sf_catch_data1$csum_keep <- ave(sf_catch_data1$keep, sf_catch_data1$tripid, FUN=cumsum)
+      sf_catch_data1$keep_adj = ifelse(sf_catch_data1$csum_keep>fluke_bag, 0,sf_catch_data1$keep)
+      
+      #Add the following lines to end the trip once the bag limit is reached (rather than continuing to discard)
+      ###
+      sf_catch_data1$post_bag_fish=ifelse(sf_catch_data1$csum_keep>fluke_bag, 1,0)
+      sf_catch_data1= subset(sf_catch_data1,post_bag_fish==0 )
+      sf_catch_data1 <- subset(sf_catch_data1, select=-c(post_bag_fish ))
+      ###
+      
+      sf_catch_data1 <- subset(sf_catch_data1, select=-c(keep, csum_keep))
+      names(sf_catch_data1)[names(sf_catch_data1) == "keep_adj"] = "keep"
+      
       sf_catch_data1$release = ifelse(sf_catch_data1$keep==0, 1,0) 
       
       sf_catch_data1=subset(sf_catch_data1, select=c(tripid, keep, release))
-      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data$tripid),FUN=sum, na.rm=TRUE)
+      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data1$tripid),FUN=sum, na.rm=TRUE)
       sf_catch_data1 <-subset(sf_catch_data1, select=c(Group.1, keep, release))
       names(sf_catch_data1)[names(sf_catch_data1) == "Group.1"] = "tripid"
       names(sf_catch_data1)[names(sf_catch_data1) == "keep"] = "tot_keep"
@@ -129,8 +132,7 @@ for(p in levels(periodz)){
       names(sf_catch_data1)[names(sf_catch_data1) == "release"] = "tot_rel"
       
     }
-    #import and expand the sf_size_data so that each row represents a fish
-    size_data = data.frame(read_excel("fitted_sizes_region_raw.xlsx"))
+    
     
     
     trip_data =  as.data.frame(sf_catch_data1)
@@ -175,13 +177,18 @@ for(p in levels(periodz)){
     
     
     
-    #Execute the following code if the seasonal period has a positive bag limit
-    # for NC in 2019, there was no harvest of BSB on directed fluke trips
+    #Execute the following code if the seasonal period has a positive bag limit 
     if(bsb_bag>0){
       
       bsb_catch_data1= as.data.frame(bsb_catch_data)  
       bsb_catch_data1$uniform=runif(nrow(bsb_catch_data1))
-      bsb_catch_data1$keep = ifelse(bsb_catch_data1$uniform>=1.1, 1,0) 
+      bsb_catch_data1$keep = ifelse(bsb_catch_data1$uniform>=1, 1,0) 
+      
+      bsb_catch_data1$csum_keep <- ave(bsb_catch_data1$keep, bsb_catch_data1$tripid, FUN=cumsum)
+      bsb_catch_data1$keep_adj = ifelse(bsb_catch_data1$csum_keep>bsb_bag, 0,bsb_catch_data1$keep)
+      bsb_catch_data1 <- subset(bsb_catch_data1, select=-c(keep, csum_keep))
+      names(bsb_catch_data1)[names(bsb_catch_data1) == "keep_adj"] = "keep"
+      
       bsb_catch_data1$release = ifelse(bsb_catch_data1$keep==0, 1,0) 
       
       bsb_catch_data1=subset(bsb_catch_data1, select=c(tripid, keep, release))
@@ -226,10 +233,13 @@ for(p in levels(periodz)){
     trip_data[is.na(trip_data)] = 0
     
     
+    
+    
+    
+    
     #####################
     #####   weakfish   ######
     #####################
-    
     
     #import wf data
     wf_catch_data = data.frame(read_excel("other_species_fitted_catch.xlsx"))                                                                            
@@ -275,7 +285,14 @@ for(p in levels(periodz)){
       
       wf_catch_data1= as.data.frame(wf_catch_data)  
       wf_catch_data1$uniform=runif(nrow(wf_catch_data1))
-      wf_catch_data1$keep = ifelse(wf_catch_data1$uniform>=.75, 1,0) 
+      wf_catch_data1$keep = ifelse(wf_catch_data1$uniform>=.75, 1,0)
+      
+      wf_catch_data1$csum_keep <- ave(wf_catch_data1$keep, wf_catch_data1$tripid, FUN=cumsum)
+      wf_catch_data1$keep_adj = ifelse(wf_catch_data1$csum_keep>wf_bag, 0,wf_catch_data1$keep)
+      wf_catch_data1 <- subset(wf_catch_data1, select=-c(keep, csum_keep))
+      names(wf_catch_data1)[names(wf_catch_data1) == "keep_adj"] = "keep"
+      
+      
       wf_catch_data1$release = ifelse(wf_catch_data1$keep==0, 1,0) 
       
       wf_catch_data1=subset(wf_catch_data1, select=c(tripid, keep, release))
@@ -366,7 +383,14 @@ for(p in levels(periodz)){
       
       rd_catch_data1= as.data.frame(rd_catch_data)  
       rd_catch_data1$uniform=runif(nrow(rd_catch_data1))
-      rd_catch_data1$keep = ifelse(rd_catch_data1$uniform>=.9, 1,0) 
+      rd_catch_data1$keep = ifelse(rd_catch_data1$uniform>=1.1, 1,0) 
+      
+      rd_catch_data1$csum_keep <- ave(rd_catch_data1$keep, rd_catch_data1$tripid, FUN=cumsum)
+      rd_catch_data1$keep_adj = ifelse(rd_catch_data1$csum_keep>rd_bag, 0,rd_catch_data1$keep)
+      rd_catch_data1 <- subset(rd_catch_data1, select=-c(keep, csum_keep))
+      names(rd_catch_data1)[names(rd_catch_data1) == "keep_adj"] = "keep"
+      
+      
       rd_catch_data1$release = ifelse(rd_catch_data1$keep==0, 1,0) 
       
       rd_catch_data1=subset(rd_catch_data1, select=c(tripid, keep, release))
@@ -409,6 +433,7 @@ for(p in levels(periodz)){
     trip_data[is.na(trip_data)] = 0
     
     
+    
     trip_data$catch_draw=i
     dfs[[i]]=trip_data
     
@@ -438,28 +463,19 @@ costs_new_NC = list()
 pds_new = list()
 for(p in levels(periodz)){
   
+  
   directed_trips_p = subset(directed_trips, period == p)
   n_trips = mean(directed_trips_p$dtrip)  
   
-  # Add trip costs. Assign choice occasion a shore or boat trip cost in proportion to estimated number of
-  # directed fluke trips by mode. I copied the proportions below from directed_trips_by_state_mode.dta
+  # Add trip costs. These are mean and sd estimates from over all modes from the expenditure survey
   pds=subset(pds_all, period==p)
   
-  max_trip=max(pds$tripid)
-  charter=round(max_trip*.09)
-  private=round(max_trip*.70)
-  shore = max_trip-charter-private
-  
-  charter_draws = trip_cost_data_chart[sample(nrow(trip_cost_data_chart), charter), ]
-  privt_draws = trip_cost_data_privt[sample(nrow(trip_cost_data_privt), private), ]
-  shore_draws = trip_cost_data_shore[sample(nrow(trip_cost_data_shore), shore), ]
-  
-  cost_data = bind_rows(charter_draws, privt_draws, shore_draws )
-  cost_data$tripid = 1:nrow(cost_data)
-  cost_data= subset(cost_data, select=c(tripid, cost))
-  trip_data =  merge(pds,cost_data,by="tripid")
+  trip_costs=data.frame(read_excel("trip_costs_state_summary.xlsx"))                
+  mean_cost=trip_costs$mean_cost[trip_costs$state==state1]
+  sd_cost=trip_costs$sd_cost[trip_costs$state==state1]
+  trip_data=pds
+  trip_data$cost=rnorm(nrow(trip_data), mean=mean_cost,sd= sd_cost)
   trip_data[is.na(trip_data)] = 0
-  
   
   # Costs_new_state data sets will retain raw trip outcomes from the baseline scenario. 
   # We will merge these data to the prediction year outcomes to calculate changes in CS. 
@@ -503,6 +519,7 @@ for(p in levels(periodz)){
     param_draws_NC$beta_striper_blue = rnorm(10000, mean = 0.454, sd = 1.991)
     param_draws_NC$beta_cost = rnorm(10000, mean = -0.008, sd = 0)
     
+    
     param_draws_NC$parameter_draw=d
     
     trip_data =  merge(param_draws_NC,trip_data,by="tripid")
@@ -521,7 +538,6 @@ for(p in levels(periodz)){
       trip_data$beta_cost*trip_data$cost 
     
     trip_data$period=as.numeric(trip_data$period)
-    
     
     # Collapse data from the X catch draws so that each row contains mean values
     mean_trip_data <-aggregate(trip_data, by=list(trip_data$tripid),FUN=mean, na.rm=TRUE)
@@ -581,6 +597,7 @@ for(p in levels(periodz)){
     sims = round(observed_trips/mean_prob)
     ndraws = nrow(mean_trip_data)
     expand=sims/ndraws
+    mean_trip_data$n_choice_occasions=1
     
     list_names = colnames(mean_trip_data)[colnames(mean_trip_data) !="Group.1" & colnames(mean_trip_data) !="tripid" 
                                           & colnames(mean_trip_data) !="catch_draw" & colnames(mean_trip_data) !="period"
@@ -591,16 +608,11 @@ for(p in levels(periodz)){
     }
     
     
-    #This should equal the observed # of trips in that period
-    sum(mean_trip_data$probA)
-    
-    
     
     mean_trip_data$sim=1
     
     #sum probability weighted catch over all choice occasions
     aggregate_trip_data <-aggregate(mean_trip_data, by=list(mean_trip_data$sim),FUN=sum, na.rm=TRUE)
-    aggregate_trip_data$n_choice_occasions = sims
     
     
     aggregate_trip_data = subset(aggregate_trip_data, select=-c(Group.1, tripid, catch_draw, period, cost, vA ,sim))
@@ -647,8 +659,11 @@ costs_new_all_NC[is.na(costs_new_all_NC)] = 0
 sum(pds_new_all_NC$tot_keep)
 ((34894.6-sum(pds_new_all_NC$tot_keep))/34894.6)*100
 
-sum(pds_new_all_NC$tot_rel)
-((1469.1-sum(pds_new_all_NC$tot_rel))/1469.1)*100
+ sum(pds_new_all_NC$tot_rel)
+ ((1469.1-sum(pds_new_all_NC$tot_rel))/1469.1)*100
+
+# sum(pds_new_all_NC$tot_rel)
+# ((467942-sum(pds_new_all_NC$tot_rel))/467942)*100
 
 pds_new_all_NC$tot_sf_cat=pds_new_all_NC$tot_keep+pds_new_all_NC$tot_rel
 sum(pds_new_all_NC$tot_sf_cat)

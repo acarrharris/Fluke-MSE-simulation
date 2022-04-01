@@ -4,16 +4,19 @@
 # There are several pieces of information that vary by state or regions:
 #     By state: trip costs, percent of trips taken by each mode (used for assigning trip costs), 
 #               and regulations (which also vary within a a season for a given state)
-#     By region (MA-NY, NJ, DE-NC): catch-per-trip and catch-at-length distributions
+#     By state: catch-per-trip and catch-at-length distributions
 #     By region (MA-NY, NJ, DE-MD, VA-NC): utility parameters and target species 
 
 
 # This code requires the following data:
 # 1) The output from the calibration: calibration_output_by_period.xlsx
-# 2) Dataset containing the alternative regulations to be imposed: directed_trips_region - alternative regs test.xlsx
-# 3) Abundance adjusted catch-at-length for summer flounder. This is an output file from the script catch at length given stock structure - prediction.R
-#    For now, the catch-at-length disitributions in this file are identical to the calibration catch-at-lengths: sf_fitted_sizes_y2plus.xlsx
-# 4) Set of utility parameters draws from one of the four surveys, for MA-NY states: utility_param_draws_MA_NY.xlsx
+# 2) Dataset containing the alternative regulations to be imposed
+# 3) Abundance adjusted catch-at-length for summer flounder. 
+#    This consists of two output files from the "catch at length given stock structure" script:
+#       a) "predicted_catch_(STATE)" which gives catch-per-trip based on population abundance
+#       b)  "sf_fitted_sizes_y2plus.xlsx" which gives a new size distribution based on historical recreational 
+#           selectivity and projected population abundances at length. 
+
 
 
 state1="MA"
@@ -21,14 +24,16 @@ region1="NO"
 
 
 # Input the calibration output which contains the number of choice occasions needed to simulate
-calibration_data = data.frame(read_excel("calibration_output_by_period.xlsx"))
-calibration_data = subset(calibration_data, state == state1, select=c(period, sim, state, n_choice_occasions))
+#calibration_data = data.frame(read_excel("calibration_output_by_period.xlsx"))
+#calibration_data = subset(calibration_data, state == state1, select=c(period, sim, state, n_choice_occasions))
+
+calibration_data <- data.frame(read_excel("calibration_output_by_period.xlsx")) %>%
+                    filter(state == state1) %>%
+                    select(period, sim, state, n_choice_occasions)
 
 
-# Input the data set containing alterntative regulations and directed trips (directed_trips_region - alternative regs test.xlsx)
-directed_trips = data.frame(read_excel("directed_trips_regions_bimonthly.xlsx"))                                                                            
-directed_trips$dtrip=round(directed_trips$dtrip_2019)
-directed_trips= subset(directed_trips, state == state1)
+# Input the data set containing alterntative regulations and directed trips
+directed_trips <- subset(directed_trip_alt_regs, state == state1)
 
 min_period=min(directed_trips$period)
 max_period=max(directed_trips$period)
@@ -47,7 +52,7 @@ levels(periodz)
 for(p in levels(periodz)){
   directed_trips_p = subset(directed_trips, period == p)
   n_trips = mean(directed_trips_p$dtrip_2019)
-  n_draws = min(10000,n_trips*2.5 )
+  n_draws = min(1000,n_trips*2.5 )
   fluke_bag = mean(directed_trips_p$fluke_bag)
   fluke_min = mean(directed_trips_p$fluke_min)
   fluke_max = mean(directed_trips_p$fluke_max)
@@ -63,7 +68,7 @@ for(p in levels(periodz)){
   for(i in 1:10) {
     
     # Input catch-per-trip numbers 
-    sf_catch_data = data.frame(read_excel("predicted_catch_NO.xlsx"))                                                                            
+    sf_catch_data = data.frame(read_excel("predicted_catch_MA.xlsx"))                                                                            
     tot_sf_catch = sf_catch_data$sf_t_nb
     tot_bsb_catch = sf_catch_data$bsb_t_nb
     sf_catch_data = data.frame(tot_sf_catch,tot_bsb_catch)
@@ -71,6 +76,7 @@ for(p in levels(periodz)){
     # random draw of fluke and bsb catch
     sf_catch_data = as.data.frame(sf_catch_data[sample(1:nrow(sf_catch_data), n_draws), ])
     sf_catch_data$tripid = 1:nrow(sf_catch_data)
+    sf_bsb_catch_data = sf_catch_data
     
     
     
@@ -90,108 +96,314 @@ for(p in levels(periodz)){
     rownames(sf_catch_data) = NULL
     sf_catch_data$fishid = 1:nrow(sf_catch_data)
     
-    #import and expand the population numbers-adjusted sf_size_data so that each row represents a fish
-    size_data_sf = data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx"))
-    size_data_sf = subset(size_data_sf, region==region1, select= c(fitted_length, fitted_prob))
-    size_data_sf$nfish = round(100000 * size_data_sf$fitted_prob, digits=0)
-    sum(size_data_sf$nfish)
     
-    row_inds <- seq_len(nrow(size_data_sf))
-    size_data_sf <- size_data_sf[c(rep(row_inds, size_data_sf$nfish)), ]
-    rownames(size_data_sf) = NULL
-    size_data_sf = subset(size_data_sf, select= fitted_length)
+    # Here we input the sf catch-at-length data and follow the same routine as in the calibration year:
+      # Assign a random uniform number to each fish caught, and bin that fish as harvested if it is above the 
+      # adjust p* value, otherwise released. Fish caught above the bag limit are released. 
+    
+    pstar = subset(data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx")), region==state1 & fitted_length==fluke_min)
+    pstar = mean(pstar$cdf)
+    
+    #The following code executes if the seasonal period has a positive bag limit 
+    if(fluke_bag>0){
+      
+      sf_catch_data1= as.data.frame(sf_catch_data)  
+      sf_catch_data1$uniform=runif(nrow(sf_catch_data1))
+      sf_catch_data1$keep = ifelse(sf_catch_data1$uniform>=pstar, 1,0) 
+      
+      sf_catch_data1$csum_keep <- ave(sf_catch_data1$keep, sf_catch_data1$tripid, FUN=cumsum)
+      sf_catch_data1$keep_adj = ifelse(sf_catch_data1$csum_keep>fluke_bag, 0,sf_catch_data1$keep)
+      
+      #Add the following lines to end the trip once the bag limit is reached (rather than continuing to discard)
+      ###
+      sf_catch_data1$post_bag_fish=ifelse(sf_catch_data1$csum_keep>fluke_bag, 1,0)
+      sf_catch_data1= subset(sf_catch_data1,post_bag_fish==0 )
+      sf_catch_data1 <- subset(sf_catch_data1, select=-c(post_bag_fish ))
+      ###
+      
+      sf_catch_data1 <- subset(sf_catch_data1, select=-c(keep, csum_keep))
+      names(sf_catch_data1)[names(sf_catch_data1) == "keep_adj"] = "keep"
+      
+      
+      sf_catch_data1$release = ifelse(sf_catch_data1$keep==0, 1,0) 
+      
+      sf_catch_data1=subset(sf_catch_data1, select=c(tripid, keep, release))
+      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data1$tripid),FUN=sum, na.rm=TRUE)
+      sf_catch_data1 <-subset(sf_catch_data1, select=c(Group.1, keep, release))
+      names(sf_catch_data1)[names(sf_catch_data1) == "Group.1"] = "tripid"
+      names(sf_catch_data1)[names(sf_catch_data1) == "keep"] = "tot_keep"
+      names(sf_catch_data1)[names(sf_catch_data1) == "release"] = "tot_rel"
+      
+      
+      # After assigning each fish caught as kept or released, we have to assign sizes to those fish.
+      # To do so, we parse out the full catch-at-length distribution into catch-at-length above the min. size limit (keep) 
+      # and catch-at-length below the minimum size limit (release). We then adjust these probabilities into full harvest-at-length 
+      # and release-at-length distributions, and randomly draw from them to assign a size to each fish harvested or released. 
+      
+      
+      #make a dataset of expanded keeps and releases by tripid
+      sf_keep_numbers=subset(sf_catch_data1, tot_keep>0, select=c(tripid, tot_keep))
+      row_inds <- seq_len(nrow(sf_keep_numbers))
+      sf_keep_numbers <- sf_keep_numbers[c(rep(row_inds, sf_keep_numbers$tot_keep)), ]
+      sf_keep_numbers$fishid = 1:nrow(sf_keep_numbers)
+      
+      
+      sf_rel_numbers=subset(sf_catch_data1, tot_rel>0, select=c(tripid, tot_rel))
+      row_inds <- seq_len(nrow(sf_rel_numbers))
+      sf_rel_numbers <- sf_rel_numbers[c(rep(row_inds, sf_rel_numbers$tot_rel)), ]
+      sf_rel_numbers$fishid = 1:nrow(sf_rel_numbers)
+      
+      
+      # Import size distribution, separate out for sizes of harvested fish and released fish
+      # Harvest sizes 
+      sf_keep_sizes = subset(data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx")), region==state1 & fitted_length>=fluke_min)
+      sf_keep_sizes$adjusted_prob=sf_keep_sizes$fitted_prob/sum(sf_keep_sizes$fitted_prob)
+      sf_keep_sizes=subset(sf_keep_sizes, select=c(adjusted_prob, fitted_length))
+      sf_keep_sizes$nfish = round(100000 * sf_keep_sizes$adjusted_prob, digits=0)
+      
+      row_inds <- seq_len(nrow(sf_keep_sizes))
+      sf_keep_sizes <- sf_keep_sizes[c(rep(row_inds, sf_keep_sizes$nfish)), ]
+      rownames(sf_keep_sizes) = NULL
+      sf_keep_sizes = subset(sf_keep_sizes, select= fitted_length)
+      
+      # release sizes
+      sf_rel_sizes = subset(data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx")), region==state1 & fitted_length<fluke_min)
+      sf_rel_sizes$adjusted_prob=sf_rel_sizes$fitted_prob/sum(sf_rel_sizes$fitted_prob)
+      sf_rel_sizes=subset(sf_rel_sizes, select=c(adjusted_prob, fitted_length))
+      sf_rel_sizes$nfish = round(100000 * sf_rel_sizes$adjusted_prob, digits=0)
+      
+      row_inds <- seq_len(nrow(sf_rel_sizes))
+      sf_rel_sizes <- sf_rel_sizes[c(rep(row_inds, sf_rel_sizes$nfish)), ]
+      rownames(sf_rel_sizes) = NULL
+      sf_rel_sizes = subset(sf_rel_sizes, select= fitted_length)
+      
+      
+      #draw random sample of harvest/releases sizes matching number of fish harvested/released
+      random_keep_sizes  = data.frame(sf_keep_sizes[sample(nrow(sf_keep_sizes), nrow(sf_keep_numbers)), ])
+      colnames(random_keep_sizes) = "fitted_length"
+      random_keep_sizes$fishid = 1:nrow(random_keep_sizes)
+      sf_keep_numbers =  merge(random_keep_sizes,sf_keep_numbers,by="fishid")
+      
+      
+      random_rel_sizes  = data.frame(sf_rel_sizes[sample(nrow(sf_rel_sizes), nrow(sf_rel_numbers)), ])
+      colnames(random_rel_sizes) = "fitted_length"
+      random_rel_sizes$fishid = 1:nrow(random_rel_sizes)
+      sf_rel_numbers =  merge(random_rel_sizes,sf_rel_numbers,by="fishid")
+      
+      
+      names(sf_keep_numbers)[names(sf_keep_numbers) == "fitted_length"] = "keep_length"
+      sf_keep_numbers=subset(sf_keep_numbers, select=-c(tot_keep, fishid))
+      sf_keep_numbers$keep_adj=1
+      
+      sf_keep_numbers <- sf_keep_numbers %>%
+        group_by(tripid, keep_length) %>%
+        summarize(keep = sum(keep_adj))
+      
+      keep_size_data_wide <- spread(sf_keep_numbers, keep_length, keep)
+      colnames(keep_size_data_wide) = paste("keep_length",  colnames(keep_size_data_wide), sep="_")
+      names(keep_size_data_wide)[names(keep_size_data_wide) == "keep_length_tripid"] = "tripid"
+      keep_size_data_wide[is.na(keep_size_data_wide)] = 0
+      
+      
+      names(sf_rel_numbers)[names(sf_rel_numbers) == "fitted_length"] = "release_length"
+      sf_rel_numbers=subset(sf_rel_numbers, select=-c(tot_rel, fishid))
+      sf_rel_numbers$release_adj=1
+      
+      sf_rel_numbers <- sf_rel_numbers %>%
+        group_by(tripid, release_length) %>%
+        summarize(release = sum(release_adj))
+      
+      
+      rel_size_data_wide <- spread(sf_rel_numbers, release_length, release)
+      colnames(rel_size_data_wide) = paste("release_length",  colnames(rel_size_data_wide), sep="_")
+      names(rel_size_data_wide)[names(rel_size_data_wide) == "release_length_tripid"] = "tripid"
+      rel_size_data_wide[is.na(rel_size_data_wide)] = 0
+      
+      # combine the harvest- and release-at-length data
+      trip_data=bind_rows(rel_size_data_wide, keep_size_data_wide)
+      trip_data[is.na(trip_data)] = 0
+      trip_data <- trip_data %>% group_by(tripid) %>% summarise_all(sum)
+      
+      #Merge these data to the original trip data, and append the zero catch trips
+      trip_data <- merge(trip_data,sf_catch_data1,by="tripid", all.x=TRUE, all.y=TRUE)
+      trip_data = bind_rows(trip_data, sf_zero_catch)
+      
+      
+      trip_data = trip_data[order(trip_data$tripid),]
+      rownames(trip_data) <- NULL
+      
+      trip_data[is.na(trip_data)] = 0
+      trip_data$tot_sf_catch = trip_data$tot_keep+trip_data$tot_rel
+      trip_data[is.na(trip_data)] = 0
+      
+      
+    }
+    
+    # analgous code for closed seasons 
+    if(fluke_bag==0){
+      
+      sf_catch_data1= as.data.frame(sf_catch_data)  
+      sf_catch_data1$keep = 0
+      sf_catch_data1$release = 1
+      
+      sf_catch_data1=subset(sf_catch_data1, select=c(tripid, keep, release))
+      sf_catch_data1 <-aggregate(sf_catch_data1, by=list(sf_catch_data1$tripid),FUN=sum, na.rm=TRUE)
+      sf_catch_data1 <-subset(sf_catch_data1, select=c(Group.1, keep, release))
+      names(sf_catch_data1)[names(sf_catch_data1) == "Group.1"] = "tripid"
+      names(sf_catch_data1)[names(sf_catch_data1) == "keep"] = "tot_keep"
+      names(sf_catch_data1)[names(sf_catch_data1) == "release"] = "tot_rel"
+      
+      
+      #make a dataset of expanded releases by tripid
+      sf_rel_numbers=subset(sf_catch_data1, tot_rel>0, select=c(tripid, tot_rel))
+      row_inds <- seq_len(nrow(sf_rel_numbers))
+      sf_rel_numbers <- sf_rel_numbers[c(rep(row_inds, sf_rel_numbers$tot_rel)), ]
+      sf_rel_numbers$fishid = 1:nrow(sf_rel_numbers)
+      
+      
+      # Import size distribution, draw from the FULL catch at length distribution (since the season is closed and no fish can be kept regardless of size)
+      # release sizes
+      sf_rel_sizes = subset(data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx")), region==state1)
+      sf_rel_sizes$adjusted_prob=sf_rel_sizes$fitted_prob/sum(sf_rel_sizes$fitted_prob)
+      sf_rel_sizes=subset(sf_rel_sizes, select=c(adjusted_prob, fitted_length))
+      sf_rel_sizes$nfish = round(100000 * sf_rel_sizes$adjusted_prob, digits=0)
+      
+      row_inds <- seq_len(nrow(sf_rel_sizes))
+      sf_rel_sizes <- sf_rel_sizes[c(rep(row_inds, sf_rel_sizes$nfish)), ]
+      rownames(sf_rel_sizes) = NULL
+      sf_rel_sizes = subset(sf_rel_sizes, select= fitted_length)
+      
+      #draw random sample of releases sizes matching number of fish released
+      random_rel_sizes  = data.frame(sf_rel_sizes[sample(nrow(sf_rel_sizes), nrow(sf_rel_numbers)), ])
+      colnames(random_rel_sizes) = "fitted_length"
+      random_rel_sizes$fishid = 1:nrow(random_rel_sizes)
+      sf_rel_numbers =  merge(random_rel_sizes,sf_rel_numbers,by="fishid")
+      
+      names(sf_rel_numbers)[names(sf_rel_numbers) == "fitted_length"] = "release_length"
+      sf_rel_numbers=subset(sf_rel_numbers, select=-c(tot_rel, fishid))
+      sf_rel_numbers$release_adj=1
+      
+      sf_rel_numbers <- sf_rel_numbers %>%
+        group_by(tripid, release_length) %>%
+        summarize(release = sum(release_adj))
+      
+      
+      rel_size_data_wide <- spread(sf_rel_numbers, release_length, release)
+      colnames(rel_size_data_wide) = paste("release_length",  colnames(rel_size_data_wide), sep="_")
+      names(rel_size_data_wide)[names(rel_size_data_wide) == "release_length_tripid"] = "tripid"
+      rel_size_data_wide[is.na(rel_size_data_wide)] = 0
+      
+      trip_data=rel_size_data_wide
+      trip_data[is.na(trip_data)] = 0
+      trip_data <- trip_data %>% group_by(tripid) %>% summarise_all(sum)
+      
+      #Merge these data to the original trip data, and append the zero catch trips
+      trip_data <- merge(trip_data,sf_catch_data1,by="tripid", all.x=TRUE, all.y=TRUE)
+      trip_data = bind_rows(trip_data, sf_zero_catch)
+      
+      trip_data = trip_data[order(trip_data$tripid),]
+      rownames(trip_data) <- NULL
+      
+      trip_data[is.na(trip_data)] = 0
+      trip_data$tot_sf_catch = trip_data$tot_keep+trip_data$tot_rel
+      trip_data[is.na(trip_data)] = 0
+      
+    }
     
     
-    #draw random sample of sizes matching the number of fish caught
-    random_sizes  = data.frame(size_data_sf[sample(nrow(size_data_sf), nrow(sf_catch_data)), ])
-    colnames(random_sizes) = "fitted_length"
-    random_sizes$fishid = 1:nrow(random_sizes)
-    catch_size_data =  merge(random_sizes,sf_catch_data,by="fishid")
+    
+    #########################
+    ###  Black sea bass  ####
+    #########################
     
     
-    # Impose regulations, calculate keep and release per trip
-    # For summer flounder, retain keep- and release-at-length
+    #draw sizes for black sea bass catch
+    bsb_catch_data =subset(sf_bsb_catch_data, select=c(tripid, tot_bsb_catch))
+    bsb_catch_data = bsb_catch_data[!duplicated(bsb_catch_data), ]
     
-    bag = fluke_bag
-    minsize = fluke_min
-    maxsize = fluke_max
-    catch_size_data$keep = ifelse(catch_size_data$fitted_length>=minsize & catch_size_data$fitted_length<=maxsize, 1,0) 
-    catch_size_data$csum_keep <- ave(catch_size_data$keep, catch_size_data$tripid, FUN=cumsum)
-    catch_size_data$keep_adj = ifelse(catch_size_data$csum_keep<=bag & catch_size_data$keep==1, 1,0) 
-    catch_size_data$release = ifelse(catch_size_data$keep_adj==1, 0,1) 
-    
-    catch_size_data= subset(catch_size_data, select=c(fishid, fitted_length, tot_sf_catch, tripid, keep_adj, release))
-    names(catch_size_data)[names(catch_size_data) == "keep_adj"] = "keep"
+    #subset trips with zero bsb catch 
+    bsb_zero_catch = subset(bsb_catch_data, tot_bsb_catch == 0, select=c(tripid, tot_bsb_catch))
     
     
-    # generate sum of number of kept and released fish by tripid
-    catch_size_data$tot_keep=with(catch_size_data, ave(keep, tripid, FUN = sum))
-    catch_size_data$tot_rel=with(catch_size_data, ave(release, tripid, FUN = sum))
+    #remove trips with zero bsb catch, will add them on later
+    bsb_catch_data=bsb_catch_data[bsb_catch_data$tot_bsb_catch!=0, ]
+    rownames(bsb_catch_data) = NULL
     
     
-    # generate data set with total keep and release only
-    catch_size_data1 = cbind(catch_size_data$tripid, catch_size_data$tot_keep, catch_size_data$tot_rel)
-    colnames(catch_size_data1) = cbind("tripid", "tot_keep", "tot_rel")
-    catch_size_data2 = catch_size_data1[!duplicated(catch_size_data1), ]
+    #expand the bsb_catch_data so that each row represents a fish
+    row_inds = seq_len(nrow(bsb_catch_data))
+    bsb_catch_data[is.na(bsb_catch_data)] = 0
+    bsb_catch_data = bsb_catch_data[c(rep(row_inds, bsb_catch_data$tot_bsb_catch)), ]
+    rownames(bsb_catch_data) = NULL
+    bsb_catch_data$fishid = 1:nrow(bsb_catch_data)
     
     
-    # generate data set with size of each fish kept and released
-    keep_size_data= subset(catch_size_data, keep==1, select=c(fitted_length, tripid, keep, release))
-    release_size_data= subset(catch_size_data, keep==0, select=c(fitted_length, tripid, keep, release))
     
-    keep_size_data = subset(keep_size_data, select=c(fitted_length, tripid, keep))
-    keep_size_data <- keep_size_data %>%
-      group_by(tripid, fitted_length) %>%
-      summarize(keep = sum(keep))
+    #Execute the following code if the seasonal period has a positive bag limit 
+    if(bsb_bag>0){
+      
+      bsb_catch_data1= as.data.frame(bsb_catch_data)  
+      bsb_catch_data1$uniform=runif(nrow(bsb_catch_data1))
+      bsb_catch_data1$keep = ifelse(bsb_catch_data1$uniform>=.53, 1,0)
+      
+      bsb_catch_data1$csum_keep <- ave(bsb_catch_data1$keep, bsb_catch_data1$tripid, FUN=cumsum)
+      bsb_catch_data1$keep_adj = ifelse(bsb_catch_data1$csum_keep>bsb_bag, 0,bsb_catch_data1$keep)
+      bsb_catch_data1 <- subset(bsb_catch_data1, select=-c(keep, csum_keep))
+      names(bsb_catch_data1)[names(bsb_catch_data1) == "keep_adj"] = "keep"
+      
+      bsb_catch_data1$release = ifelse(bsb_catch_data1$keep==0, 1,0) 
+      
+      bsb_catch_data1=subset(bsb_catch_data1, select=c(tripid, keep, release))
+      bsb_catch_data1 <-aggregate(bsb_catch_data1, by=list(bsb_catch_data$tripid),FUN=sum, na.rm=TRUE)
+      bsb_catch_data1 <-subset(bsb_catch_data1, select=c(Group.1, keep, release))
+      names(bsb_catch_data1)[names(bsb_catch_data1) == "Group.1"] = "tripid"
+      names(bsb_catch_data1)[names(bsb_catch_data1) == "keep"] = "tot_keep_bsb"
+      names(bsb_catch_data1)[names(bsb_catch_data1) == "release"] = "tot_rel_bsb"
+      
+    }
     
-    
-    names(keep_size_data)[names(keep_size_data) == "fitted_length"] = "keep_length"
-    keep_size_data_wide <- spread(keep_size_data, keep_length, keep)
-    colnames(keep_size_data_wide) = paste("keep_length",  colnames(keep_size_data_wide), sep="_")
-    names(keep_size_data_wide)[names(keep_size_data_wide) == "keep_length_tripid"] = "tripid"
-    keep_size_data_wide[is.na(keep_size_data_wide)] = 0
-    
-    
-    release_size_data = subset(release_size_data, select=c(fitted_length, tripid, release))
-    release_size_data <- release_size_data %>%
-      group_by(tripid, fitted_length) %>%
-      summarize(release = sum(release))
-    
-    
-    names(release_size_data)[names(release_size_data) == "fitted_length"] = "release_length"
-    release_size_data_wide <- spread(release_size_data, release_length, release)
-    colnames(release_size_data_wide) = paste("release_length",  colnames(release_size_data_wide), sep="_")
-    names(release_size_data_wide)[names(release_size_data_wide) == "release_length_tripid"] = "tripid"
-    release_size_data_wide[is.na(release_size_data_wide)] = 0
-    
-    
-    # merge the keep-/release-at-length files with the tot_keep/release file 
-    trip_data =  merge(release_size_data_wide,keep_size_data_wide,by="tripid", all.x=TRUE, all.y=TRUE)
-    trip_data =  merge(trip_data,catch_size_data2,by="tripid", all.x=TRUE, all.y=TRUE)
+    if(bsb_bag==0){
+      
+      bsb_catch_data1= as.data.frame(bsb_catch_data)  
+      bsb_catch_data1$keep = 0
+      bsb_catch_data1$release = 1
+      
+      bsb_catch_data1=subset(bsb_catch_data1, select=c(tripid, keep, release))
+      bsb_catch_data1 <-aggregate(bsb_catch_data1, by=list(bsb_catch_data1$tripid),FUN=sum, na.rm=TRUE)
+      bsb_catch_data1 <-subset(bsb_catch_data1, select=c(Group.1, keep, release))
+      names(bsb_catch_data1)[names(bsb_catch_data1) == "Group.1"] = "tripid"
+      names(bsb_catch_data1)[names(bsb_catch_data1) == "keep"] = "tot_keep_bsb"
+      names(bsb_catch_data1)[names(bsb_catch_data1) == "release"] = "tot_rel_bsb"
+      
+    }
     
     
     #add the zero catch trips 
-    trip_data = bind_rows(trip_data, sf_zero_catch)
+    bsb_catch_data1 = bind_rows(bsb_catch_data1, bsb_zero_catch)
+    bsb_catch_data1 = subset(bsb_catch_data1, select=-c(tot_bsb_catch))
     
     #quick sort and cleanup 
-    trip_data = trip_data[order(trip_data$tripid),]
-    rownames(trip_data) <- NULL
+    bsb_catch_data1 = bsb_catch_data1[order(bsb_catch_data1$tripid),]
+    rownames(bsb_catch_data1) <- NULL
     
+    bsb_catch_data1[is.na(bsb_catch_data1)] = 0
+    
+    
+    # merge the trip data (summer flounder catch, lengths, and cost) with the bsb data (numbers kept and released))
+    trip_data =  merge(trip_data,bsb_catch_data1,by="tripid")
     trip_data[is.na(trip_data)] = 0
-    trip_data$tot_sf_catch = trip_data$tot_keep+trip_data$tot_rel
+    
+
     
     # merge catch information for other species. Assume per-trip catch outcomes for these species are the same as the calibration. 
     # This info is contained in the costs_new_all_state datasets
-    bsb_sc_data=subset(costs_new_all_MA, period ==p & catch_draw==i, select=c(tripid,tot_keep_scup_base, tot_rel_scup_base, 
-                                                                              tot_keep_bsb_base, tot_rel_bsb_base)) 
-    
-    names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_bsb_base"] = "tot_keep_bsb"
-    names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_bsb_base"] = "tot_rel_bsb"
-    names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_scup_base"] = "tot_keep_scup"
-    names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_scup_base"] = "tot_rel_scup"
+    sc_data=subset(costs_new_all_MA, period ==p & catch_draw==i, select=c(tripid,tot_keep_scup_base, tot_rel_scup_base )) 
+  
+    names(sc_data)[names(sc_data) == "tot_keep_scup_base"] = "tot_keep_scup"
+    names(sc_data)[names(sc_data) == "tot_rel_scup_base"] = "tot_rel_scup"
     
     # merge the trip data (summer flounder catch + lengths) with the other species data (numbers kept and released))
-    trip_data =  merge(trip_data,bsb_sc_data,by="tripid")
+    trip_data =  merge(trip_data,sc_data,by="tripid")
     trip_data[is.na(trip_data)] = 0        
     
     
@@ -239,7 +451,7 @@ for(p in levels(periodz)){
   for(d in 1:1) {
     
     # Use the previously drawn set of utility parameters to calculate expected utility, welfare, and effort in the prediction year
-    param_draws_MA_prediction = subset(param_draws_MA, parameter_draw=i)
+    param_draws_MA_prediction = subset(param_draws_MA, parameter_draw==d)
     trip_data =  merge(param_draws_MA_prediction,trip_data,by="tripid")
     
     
@@ -298,6 +510,7 @@ for(p in levels(periodz)){
     #change in Consmer surplus between prediction year and baseline year 
     mean_trip_data$change_CS = (1/mean_trip_data$beta_cost)*(log(mean_trip_data$vA_col_sum) - log(mean_trip_data$v0_col_sum))
     
+    
     # Caluculate the probability of a respondent selected each alternative based on 
     # exponentiated expected utility of the altenrative [exp(expected utility, alt=i] 
     # and the sum of exponentiated expected utility across the three altenratives.
@@ -331,6 +544,8 @@ for(p in levels(periodz)){
     ndraws = nrow(mean_trip_data)
     expand=n_choice_occasions/ndraws
     
+    mean_trip_data$n_choice_occasions=1
+    
     list_names = colnames(mean_trip_data)[colnames(mean_trip_data) !="Group.1" & colnames(mean_trip_data) !="tripid" 
                                           & colnames(mean_trip_data) !="catch_draw" & colnames(mean_trip_data) !="period"
                                           & colnames(mean_trip_data) !="tot_keep_sf_base" & colnames(mean_trip_data) !="tot_rel_sf_base" 
@@ -342,23 +557,16 @@ for(p in levels(periodz)){
       mean_trip_data[,l] = mean_trip_data[,l]*expand
     }
     
-    #This equals the observed number of trips under the new conditions
-    sum(mean_trip_data$probA)
-    
-    #This should equal the observed # of trips in that period of the baseline year
-    sum(mean_trip_data$prob0)
-    
+
     mean_trip_data$sim=1
     
     #sum probability weighted catch over all choice occasions
     aggregate_trip_data <-aggregate(mean_trip_data, by=list(mean_trip_data$sim),FUN=sum, na.rm=TRUE)
-    aggregate_trip_data$n_choice_occasions = n_choice_occasions
+
     
-    
-    aggregate_trip_data = subset(aggregate_trip_data, select=-c(Group.1, Group.1, tripid, catch_draw, period, cost, vA , v0, sim))
+    aggregate_trip_data = subset(aggregate_trip_data, select=-c(Group.1, Group.1, tripid, catch_draw, period, cost, vA , v0, sim, prob0))
     names(aggregate_trip_data)[names(aggregate_trip_data) == "probA"] = "observed_trips"
-    names(aggregate_trip_data)[names(aggregate_trip_data) == "prob0"] = "observed_trips_base"
-    
+
     
     aggregate_trip_data$sim = d
     
@@ -367,11 +575,8 @@ for(p in levels(periodz)){
   }
   
   parameter_draws_all = as.data.frame(bind_rows(parameter_draws[[1]]))
-  
-  
   parameter_draws_all[is.na(parameter_draws_all)] = 0
   rownames(parameter_draws_all) = NULL
-  
   
   parameter_draws_all$period=p
   pds_new[[p]]=parameter_draws_all
@@ -387,8 +592,5 @@ pds_new_all_MA$alt_regs = 1
 pds_new_all_MA=subset(pds_new_all_MA, select=-c(Group.1, tot_keep_sf_base, tot_rel_sf_base, 
                                                 tot_keep_scup_base, tot_rel_scup_base, 
                                                 tot_keep_bsb_base, tot_rel_bsb_base, tot_sf_catch))
-
-
-# write_xlsx(pds_new_all_MA,"MA_prediction_output_check.xlsx")
 
 
