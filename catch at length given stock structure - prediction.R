@@ -12,34 +12,34 @@
 
 
 # Import the 2018 ALK (in centimeters) provided by M. Terceiro
-# age_length_key = data.frame(read_excel("com_sv_len_age_adj_2018.xlsx"))                                                                            
-# 
-# 
-# #import a test numbers-at-age dataset
-# # THIS IS WHERE TO IMPORT THE NUMBERS AT AGE FROM THE OPERATING MODEL
-# #numbers_at_age = data.frame(read_excel("numbers_at_age_2018.xlsx"))
-# 
-# #numbers_at_age = data.frame(read_excel("F2021_2019_ALLPROJ_2022_STOCKN_sample100.xlsx"))
-# #numbers_at_age = subset(numbers_at_age, numbers_at_age$draw==x)
-# numbers_at_age = data.frame(read_excel("numbers_at_age_2019.xlsx"))
-# #numbers_at_age = data.frame(read_excel("F2021_2019_ALLPROJ_2022_STOCKN_median.xlsx"))
-# 
-# 
-# # Merge the two above datasets and create population numbers-at-length (inches)
-# numbers_at_length =  merge(age_length_key,numbers_at_age,by="age", all.x=TRUE, all.y=TRUE)
-# numbers_at_length$N_l = numbers_at_length$proportion*numbers_at_length$Na
-# 
-# numbers_at_length = aggregate(numbers_at_length, by=list(numbers_at_length$l_in_bin),FUN=sum, na.rm=TRUE)
-# numbers_at_length <-subset(numbers_at_length, select=c(Group.1,N_l))
-# names(numbers_at_length)[names(numbers_at_length) == "Group.1"] = "l_in_bin"
+age_length_key = data.frame(read_excel("com_sv_len_age_adj_2018.xlsx"))
 
 
-numbers_at_length <- tibble(l_in_bin = lenbinuse,
-                            N_l = om_length_in[1,])
+#import a test numbers-at-age dataset
+# THIS IS WHERE TO IMPORT THE NUMBERS AT AGE FROM THE OPERATING MODEL
+#numbers_at_age = data.frame(read_excel("numbers_at_age_2018.xlsx"))
+
+#numbers_at_age = data.frame(read_excel("F2021_2019_ALLPROJ_2022_STOCKN_sample100.xlsx"))
+#numbers_at_age = subset(numbers_at_age, numbers_at_age$draw==x)
+numbers_at_age = data.frame(read_excel("numbers_at_age_2019.xlsx"))
+#numbers_at_age = data.frame(read_excel("F2021_2019_ALLPROJ_2022_STOCKN_median.xlsx"))
+
+
+# Merge the two above datasets and create population numbers-at-length (inches)
+numbers_at_length =  merge(age_length_key,numbers_at_age,by="age", all.x=TRUE, all.y=TRUE)
+numbers_at_length$N_l = numbers_at_length$proportion*numbers_at_length$Na
+
+numbers_at_length = aggregate(numbers_at_length, by=list(numbers_at_length$l_in_bin),FUN=sum, na.rm=TRUE)
+numbers_at_length <-subset(numbers_at_length, select=c(Group.1,N_l))
+names(numbers_at_length)[names(numbers_at_length) == "Group.1"] = "l_in_bin"
+
+
+#numbers_at_length <- tibble(l_in_bin = lenbinuse,
+#                            N_l = om_length_in[1,])
 
 #numbers_at_length <- tibble::as_tibble(lch_nums)
 
-# Translate cms's to inches 
+# Translate cms's to inches
 numbers_at_length$l_in_bin = round(numbers_at_length$l_in_bin/2.54)
 numbers_at_length = aggregate(numbers_at_length, by=list(numbers_at_length$l_in_bin),FUN=sum, na.rm=TRUE)
 numbers_at_length <-subset(numbers_at_length, select=c(Group.1,N_l))
@@ -227,6 +227,6 @@ fitted_sizes_region_all_y2 = subset(fitted_sizes_region_all_y2, select=c(fitted_
 fitted_sizes_region_all_y2$cdf <- ave(fitted_sizes_region_all_y2$fitted_prob, fitted_sizes_region_all_y2$region, FUN=cumsum)
 
 # This file contains the new catch-at-length distribution for the prediction year
-#write_xlsx(fitted_sizes_region_all_y2,"sf_fitted_sizes_y2plus.xlsx")
+write_xlsx(fitted_sizes_region_all_y2,"sf_fitted_sizes_y2plus.xlsx")
 saveRDS(fitted_sizes_region_all_y2,file = "sf_fitted_sizes_y2plus.rds")
 

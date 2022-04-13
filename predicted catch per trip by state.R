@@ -89,7 +89,7 @@ mean(sf_t_nb)
 
 region="MA"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_MA.xlsx") 
+write_xlsx(catch_data_sim, "predicted_catch_MA.xlsx") 
 saveRDS(catch_data_sim, "predicted_catch_MA.rds")
 
 
@@ -185,7 +185,7 @@ mean(sf_t_nb)
 
 region="RI"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_RI.xlsx") 
+write_xlsx(catch_data_sim, "predicted_catch_RI.xlsx") 
 saveRDS(catch_data_sim, "predicted_catch_RI.rds")
 
 
@@ -280,7 +280,7 @@ mean(sf_t_nb)
 
 region="CT"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_CT.xlsx") 
+write_xlsx(catch_data_sim, "predicted_catch_CT.xlsx") 
 saveRDS(catch_data_sim, "predicted_catch_CT.rds")
 
 
@@ -374,7 +374,7 @@ mean(sf_t_nb)
 
 region="NY"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_NY.xlsx") 
+write_xlsx(catch_data_sim, "predicted_catch_NY.xlsx") 
 saveRDS(catch_data_sim, "predicted_catch_NY.rds")
 
 
@@ -469,7 +469,7 @@ mean(sf_t_nb)
 
 region="NJ"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_NJ.xlsx") 
+write_xlsx(catch_data_sim, "predicted_catch_NJ.xlsx") 
 saveRDS(catch_data_sim, "predicted_catch_NJ.rds")
 
 
@@ -563,7 +563,7 @@ mean(sf_t_nb)
 
 region="DE"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_DE.xlsx")
+write_xlsx(catch_data_sim, "predicted_catch_DE.xlsx")
 saveRDS(catch_data_sim, "predicted_catch_DE.rds")
 
 
@@ -657,7 +657,7 @@ mean(sf_t_nb)
 
 region="MD"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_MD.xlsx")
+write_xlsx(catch_data_sim, "predicted_catch_MD.xlsx")
 saveRDS(catch_data_sim, "predicted_catch_MD.rds")
 
 
@@ -752,7 +752,7 @@ mean(sf_t_nb)
 
 region="VA"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_VA.xlsx")
+write_xlsx(catch_data_sim, "predicted_catch_VA.xlsx")
 saveRDS(catch_data_sim, "predicted_catch_VA.rds")
 
 
@@ -847,5 +847,5 @@ mean(sf_t_nb)
 
 region="NC"
 catch_data_sim=data.frame(sf_t_nb, bsb_t_nb, region)
-#write_xlsx(catch_data_sim, "predicted_catch_NC.xlsx")
+write_xlsx(catch_data_sim, "predicted_catch_NC.xlsx")
 saveRDS(catch_data_sim, "predicted_catch_NC.rds")

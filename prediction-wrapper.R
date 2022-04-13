@@ -40,7 +40,7 @@ lapply(pkgs_to_use, library, character.only = TRUE)
 # Input the data set containing alternative regulations and directed trips (directed_trips_region - alternative regs test.xlsx)
 #directed_trips_table <- data.frame(read_excel("directed_trips_region - alternative regs test.xlsx"))
 directed_trips_table <- readRDS("directed_trips_regions_bimonthly.rds")
-directed_trips_table <- readRDS("coastwide_regulations_scenario.rds")
+#directed_trips_table <- readRDS("coastwide_regulations_scenario.rds")
 # Input the calibration output which contains the number of choice occasions needed to simulate
 #calibration_data = data.frame(read_excel("calibration_output_by_period.xlsx"))
 calibration_data_table <- readRDS("calibration_output_by_period.rds")
@@ -138,29 +138,38 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"),
                                      list(sf_catch_data_ct),list(sf_catch_data_ny),
                                      list(sf_catch_data_nj),list(sf_catch_data_de),
                                      list(sf_catch_data_md),list(sf_catch_data_va), list(sf_catch_data_nc)),
-               prop_bsb_keep = #rep(0.33,9))  # add Lou's p* values here!
-                 c(1-0.67,
-                   1-0.66,
-                   1-0.77,
-                   1-0.87,
-                   1-0.93,
-                   1-0.945,
-                   1-0.96,
-                   1-0.92,
-                   0.001),
-               #prop_bsb_keep = c(.53, .38, .7, .83, .92, .942, .96, .92, 1),
+               # prop_bsb_keep = #rep(0.33,9))  # add Lou's p* values here!
+               #   c(1-0.67,
+               #     1-0.66,
+               #     1-0.77,
+               #     1-0.87,
+               #     1-0.93,
+               #     1-0.945,
+               #     1-0.96,
+               #     1-0.92,
+               #     0.001),
+               prop_bsb_keep = c(
+                 1-.53,
+                 1-.38,
+                 1-.7,
+                 1-.83,
+                 1-.92,
+                 1-.942,
+                 1-.96,
+                 1-.92,
+                 0.001), #1),
                dchoose = rep(1,9)) #1-1.1))
                
-# params <- list(state1 = "MA",
-#                region1 = "NO",
-#                calibration_data_table = list(calibration_data_table),
-#                directed_trips_table = list(directed_trips_table),
-#                size_data_read = list(size_data_read),
-#                param_draws_MA = list(param_draws_all[[1]]),
-#                costs_new_all_MA = list(costs_new[[1]]),
-#                sf_catch_data_all = list(sf_catch_data_no),
-#                prop_bsb_keep = 0.33,
-#                dchoose = 1)
+params <- list(state1 = "MA",
+               region1 = "NO",
+               calibration_data_table = list(calibration_data_table),
+               directed_trips_table = list(directed_trips_table),
+               size_data_read = list(size_data_read),
+               param_draws_MA = list(param_draws_all[[1]]),
+               costs_new_all_MA = list(costs_new[[1]]),
+               sf_catch_data_all = list(sf_catch_data_ma),
+               prop_bsb_keep = 1-0.53,
+               dchoose = 1)
 # 
 # params <- list(state1 = "NJ",
 #                region1 = "NJ",
@@ -174,11 +183,11 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"),
 #source("prediction-all.R")
 source("prediction-vec.R")
 
-# set.seed(1989)
-# simkeep <- NULL
-# simrel <- NULL
-# simagg <- NULL
-# for (jsim in 1:30) {
+set.seed(1989)
+simkeep <- NULL
+simrel <- NULL
+simagg <- NULL
+for (jsim in 1:30) {
 ##########  need to add link to OM scenario regulations
 
 #params$dchoose <- rep(sample(1:1000,1),9)
@@ -255,15 +264,15 @@ release <- release %*% t(in2cm)
 write.table(round(rbind(keep,release)/1000,3),file = "rec-catch.out", row.names = FALSE, col.names = FALSE)
 write(with(aggregate_prediction_output,observed_trips),file = "rec-catch.out", append = TRUE)
 
-# print("keep")
-# print(keep)
-# print("release")
-# print(release)
-# compare.results[[jsim]] <- NULL
-# simkeep <- rbind(simkeep,keep)
-# simrel <- rbind(simrel,release)
-# simagg <- rbind(simagg, select(aggregate_prediction_output, -starts_with("keep_"), -starts_with("release_")))
-# }
+print("keep")
+print(keep)
+print("release")
+print(release)
+#compare.results[[jsim]] <- NULL
+simkeep <- rbind(simkeep,keep)
+simrel <- rbind(simrel,release)
+simagg <- rbind(simagg, dplyr::select(aggregate_prediction_output, -starts_with("keep_"), -starts_with("release_")))
+}
 #####
 # Stop the clock
 #proc.time() - ptm
