@@ -26,17 +26,17 @@ predict_rec_catch <- function(state1 = "MA",
    
 
 #   #MA test vals for running through function directly
-  # state1 = "MA"
-  # region1 = "NO"
-  # calibration_data_table = calibration_data_table
-  # directed_trips_table = directed_trips_table
-  # size_data_read = size_data_read
-  # param_draws_MA = param_draws_all[[1]]
-  # costs_new_all_MA = costs_new[[1]]
-  # sf_catch_data_all = sf_catch_data_ma
-  # prop_bsb_keep = 1-0.53
-  # dchoose = 1
-  # 
+# state1 = "MA"
+# region1 = "NO"
+# calibration_data_table = calibration_data_table
+# directed_trips_table = directed_trips_table
+# size_data_read = size_data_read
+# param_draws_MA = param_draws_all[[1]]
+# costs_new_all_MA = costs_new[[1]]
+# sf_catch_data_all = sf_catch_data_ma
+# prop_bsb_keep = 1-0.53
+# dchoose = 1
+
 # 
    # state1 = "NC"
    # region1 = "SO"
@@ -166,6 +166,7 @@ row_inds <- seq_len(nrow(sf_catch_data))
 sf_catch_data <- sf_catch_data[c(rep(row_inds, sf_catch_data$tot_sf_catch)), ]
 rownames(sf_catch_data) <- NULL
 sf_catch_data$fishid <- 1:nrow(sf_catch_data)
+
 
 
 # generate lengths for each fish
