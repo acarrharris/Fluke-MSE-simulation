@@ -41,7 +41,9 @@ for(p in levels(periodz)){
   
   directed_trips_p = subset(directed_trips, period == p)
   n_trips = mean(directed_trips_p$dtrip_2019)
-  n_draws = min(1000,n_trips*2.5 )
+  #n_draws = min(1000,n_trips*2.5 )
+  n_draws = 30000
+  
   fluke_bag = mean(directed_trips_p$fluke_bag_2019)
   fluke_min = mean(directed_trips_p$fluke_min_2019)
   bsb_bag = mean(directed_trips_p$bsb_bag_2019)
@@ -396,18 +398,18 @@ for(p in levels(periodz)){
     #Create radnom draws of preference parameters based on the estimated means and SD from the choice model
     #For now I am drawing only one set of utility parameters across the sample 
     
-    param_draws_RI = as.data.frame(1:10000)
-    names(param_draws_RI)[names(param_draws_RI) == "1:10000"] = "tripid"
+    param_draws_RI = as.data.frame(1:30000)
+    names(param_draws_RI)[names(param_draws_RI) == "1:30000"] = "tripid"
     
-    param_draws_RI$beta_sqrt_sf_keep = rnorm(10000, mean = 0.559, sd = 0.678)
-    param_draws_RI$beta_sqrt_sf_release = rnorm(10000, mean = 0, sd = 0.336)
-    param_draws_RI$beta_sqrt_bsb_keep = rnorm(10000, mean = 0.275, sd = 0.261)
-    param_draws_RI$beta_sqrt_bsb_release = rnorm(10000, mean = 0, sd = 0)
-    param_draws_RI$beta_sqrt_scup_keep = rnorm(10000, mean = 0.075, sd = 0.143)
-    param_draws_RI$beta_sqrt_scup_release = rnorm(10000, mean = 0, sd = 0)
-    param_draws_RI$beta_opt_out = rnorm(10000, mean = -2.641, sd = 2.554)
-    param_draws_RI$beta_striper_blue = rnorm(10000, mean = 1.429, sd = 1.920)
-    param_draws_RI$beta_cost = rnorm(10000, mean = -0.012, sd = 0)
+    param_draws_RI$beta_sqrt_sf_keep = rnorm(30000, mean = 0.559, sd = 0.678)
+    param_draws_RI$beta_sqrt_sf_release = rnorm(30000, mean = 0, sd = 0.336)
+    param_draws_RI$beta_sqrt_bsb_keep = rnorm(30000, mean = 0.275, sd = 0.261)
+    param_draws_RI$beta_sqrt_bsb_release = rnorm(30000, mean = 0, sd = 0)
+    param_draws_RI$beta_sqrt_scup_keep = rnorm(30000, mean = 0.075, sd = 0.143)
+    param_draws_RI$beta_sqrt_scup_release = rnorm(30000, mean = 0, sd = 0)
+    param_draws_RI$beta_opt_out = rnorm(30000, mean = -2.641, sd = 2.554)
+    param_draws_RI$beta_striper_blue = rnorm(30000, mean = 1.429, sd = 1.920)
+    param_draws_RI$beta_cost = rnorm(30000, mean = -0.012, sd = 0)
 
     
     param_draws_RI$parameter_draw=d

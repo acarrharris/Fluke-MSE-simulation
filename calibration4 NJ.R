@@ -39,7 +39,8 @@ levels(periodz)
 for(p in levels(periodz)){
   directed_trips_p = subset(directed_trips, period ==p)
   n_trips = mean(directed_trips_p$dtrip_2019)
-  n_draws = min(1000,n_trips*2.5 )
+  #n_draws = min(1000,n_trips*2.5 )
+  n_draws = 30000  
   fluke_bag = mean(directed_trips_p$fluke_bag_2019)
   fluke_min = mean(directed_trips_p$fluke_min_2019)
   bsb_bag = mean(directed_trips_p$bsb_bag_2019)
@@ -500,20 +501,20 @@ for(p in levels(periodz)){
     #Create radnom draws of preference parameters based on the estimated means and SD from the choice model
     #For now I am drawing only one set of utility parameters across the sample 
     
-    param_draws_NJ = as.data.frame(1:10000)
-    names(param_draws_NJ)[names(param_draws_NJ) == "1:10000"] = "tripid"
+    param_draws_NJ = as.data.frame(1:30000)
+    names(param_draws_NJ)[names(param_draws_NJ) == "1:30000"] = "tripid"
     
-    param_draws_NJ$beta_sqrt_sf_keep = rnorm(10000, mean = 0.762, sd = 0.677)
-    param_draws_NJ$beta_sqrt_sf_release = rnorm(10000, mean = 0.0, sd = 0.181)
-    param_draws_NJ$beta_sqrt_bsb_keep = rnorm(10000, mean = 0.174, sd = 0.334)
-    param_draws_NJ$beta_sqrt_bsb_release = rnorm(10000, mean = 0, sd = 0)
-    param_draws_NJ$beta_sqrt_scup_keep = rnorm(10000, mean = 0.097, sd =  0.113)
-    param_draws_NJ$beta_sqrt_scup_release = rnorm(10000, mean = -0.039, sd = 0.117)
-    param_draws_NJ$beta_sqrt_wf_keep = rnorm(10000, mean = 0.394, sd =  0.199)
-    param_draws_NJ$beta_sqrt_wf_release = rnorm(10000, mean = 0.093, sd = 0.278)
-    param_draws_NJ$beta_opt_out = rnorm(10000, mean = -2.095, sd = 2.394)
-    param_draws_NJ$beta_striper_blue = rnorm(10000, mean = 1.139, sd = 1.832)
-    param_draws_NJ$beta_cost = rnorm(10000, mean = -0.009, sd = 0)
+    param_draws_NJ$beta_sqrt_sf_keep = rnorm(30000, mean = 0.762, sd = 0.677)
+    param_draws_NJ$beta_sqrt_sf_release = rnorm(30000, mean = 0.0, sd = 0.181)
+    param_draws_NJ$beta_sqrt_bsb_keep = rnorm(30000, mean = 0.174, sd = 0.334)
+    param_draws_NJ$beta_sqrt_bsb_release = rnorm(30000, mean = 0, sd = 0)
+    param_draws_NJ$beta_sqrt_scup_keep = rnorm(30000, mean = 0.097, sd =  0.113)
+    param_draws_NJ$beta_sqrt_scup_release = rnorm(30000, mean = -0.039, sd = 0.117)
+    param_draws_NJ$beta_sqrt_wf_keep = rnorm(30000, mean = 0.394, sd =  0.199)
+    param_draws_NJ$beta_sqrt_wf_release = rnorm(30000, mean = 0.093, sd = 0.278)
+    param_draws_NJ$beta_opt_out = rnorm(30000, mean = -2.095, sd = 2.394)
+    param_draws_NJ$beta_striper_blue = rnorm(30000, mean = 1.139, sd = 1.832)
+    param_draws_NJ$beta_cost = rnorm(30000, mean = -0.009, sd = 0)
     
 
     param_draws_NJ$parameter_draw=d
