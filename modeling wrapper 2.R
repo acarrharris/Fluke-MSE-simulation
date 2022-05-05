@@ -56,6 +56,8 @@ lapply(pkgs_to_use, library, character.only = TRUE)
 # Start the clock!
 ptm <- proc.time()
 
+#set the number of draws for the calibration/prediction 
+n_drawz=1000
 
 ########## 
 # Run the calibration files
