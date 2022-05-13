@@ -43,6 +43,7 @@ for(p in levels(periodz)){
   n_trips = mean(directed_trips_p$dtrip_2019)
   #n_draws = min(1000,n_trips*2.5 )
   n_draws = n_drawz
+  
   fluke_bag = mean(directed_trips_p$fluke_bag_2019)
   fluke_min = mean(directed_trips_p$fluke_min_2019)
   bsb_bag = mean(directed_trips_p$bsb_bag_2019)
@@ -353,6 +354,33 @@ for(p in levels(periodz)){
 
 pds_all= list.stack(pds, fill=TRUE)
 pds_all[is.na(pds_all)] = 0
+rm(pds)
+
+
+#Create random draws of preference parameters based on the estimated means and SD from the choice model
+utilites_DE = list()
+for(d in 1:100) {
+  
+  param_draws_DE = as.data.frame(1:30000)
+  names(param_draws_DE)[names(param_draws_DE) == "1:30000"] = "tripid"
+  param_draws_DE$beta_sqrt_sf_keep = rnorm(30000, mean = 0.776, sd = 0.516)
+  param_draws_DE$beta_sqrt_sf_release = rnorm(30000, mean = 0, sd = 0.258)
+  param_draws_DE$beta_sqrt_bsb_keep = rnorm(30000, mean = 0.239, sd = 0.311)
+  param_draws_DE$beta_sqrt_bsb_release = rnorm(30000, mean = 0, sd = 0.139)
+  param_draws_DE$beta_sqrt_wf_keep = rnorm(30000, mean = 0.360, sd =  0.251)
+  param_draws_DE$beta_sqrt_wf_release = rnorm(30000, mean = 0.061, sd = 0.220)
+  param_draws_DE$beta_opt_out = rnorm(30000, mean = -2.838, sd = 2.246)
+  param_draws_DE$beta_striper_blue = rnorm(30000, mean = 0.606, sd = 1.752)
+  param_draws_DE$beta_cost = rnorm(30000, mean = -0.009, sd = 0)
+  param_draws_DE$parameter_draw=d
+  param_draws_DE <- param_draws_DE[1:n_drawz, ] 
+  utilites_DE[[d]]= param_draws_DE
+  
+}
+
+utilites_DE_all=list.stack(utilites_DE, fill=TRUE)
+
+
 
 # Now calculate trip probabilities and utilities based on the multiple catch draws for each choice occasion
 costs_new_DE = list()
@@ -396,29 +424,11 @@ for(p in levels(periodz)){
   
   for(d in 1:1) {
     
-    #Create radnom draws of preference parameters based on the estimated means and SD from the choice model
-    #For now I am drawing only one set of utility parameters across the sample 
     
-    param_draws_DE = as.data.frame(1:30000)
-    names(param_draws_DE)[names(param_draws_DE) == "1:30000"] = "tripid"
+    param_draws_DE= utilites_DE[[1]]
+    trip_data =  merge(param_draws_DE,trip_data,by="tripid")   
     
-    param_draws_DE$beta_sqrt_sf_keep = rnorm(30000, mean = 0.807, sd = 0.599)
-    param_draws_DE$beta_sqrt_sf_release = rnorm(30000, mean = 0, sd = 0.317)
-    param_draws_DE$beta_sqrt_bsb_keep = rnorm(30000, mean = 0.239, sd = 0.287)
-    param_draws_DE$beta_sqrt_bsb_release = rnorm(30000, mean = 0, sd = 0.160)
-    param_draws_DE$beta_sqrt_wf_keep = rnorm(30000, mean = 0.379, sd =  0.381)
-    param_draws_DE$beta_sqrt_wf_release = rnorm(30000, mean = 0.064, sd = 0.227)
-    param_draws_DE$beta_opt_out = rnorm(30000, mean = -2.963, sd = 2.448)
-    param_draws_DE$beta_striper_blue = rnorm(30000, mean = 0.645, sd = 1.900)
-    param_draws_DE$beta_cost = rnorm(30000, mean = -0.009, sd = 0)
-    
-
-    param_draws_DE$parameter_draw=d
-    param_draws_DE <- param_draws_DE[1:n_drawz, ] 
-    
-    trip_data =  merge(param_draws_DE,trip_data,by="tripid")
-    
-    
+  
     
     #Expected utility
     trip_data$vA = trip_data$beta_sqrt_sf_keep*sqrt(trip_data$tot_keep) +
@@ -448,8 +458,8 @@ for(p in levels(periodz)){
     #Caluculate the expected utility of alts 2 and 3 based on the parameters of the utility function
     mean_trip_data$vA_optout= mean_trip_data$beta_opt_out*mean_trip_data$opt_out 
     mean_trip_data$vA_striper_blue= mean_trip_data$beta_striper_blue*mean_trip_data$striper_blue +
-                                    mean_trip_data$beta_cost*mean_trip_data$cost 
-    
+                                    mean_trip_data$beta_cost*mean_trip_data$cost  
+      
     #Now put these three values in the same column, exponentiate, and caluculate their sum (vA_col_sum)
     mean_trip_data$vA[mean_trip_data$alt!=1] <- 0
     mean_trip_data$vA_row_sum = rowSums(mean_trip_data[,c("vA", "vA_striper_blue","vA_optout")])
@@ -535,6 +545,7 @@ pds_new_all_DE[is.na(pds_new_all_DE)] = 0
 pds_new_all_DE$state = state1
 pds_new_all_DE$alt_regs = 0
 pds_new_all_DE= subset(pds_new_all_DE, select=-c(Group.1, tot_sf_catch, tot_bsb_catch))
+rm(pds_new)
 
 
 
@@ -542,6 +553,7 @@ pds_new_all_DE= subset(pds_new_all_DE, select=-c(Group.1, tot_sf_catch, tot_bsb_
 # and assign catch-per-trip in the prediction years. 
 costs_new_all_DE=list.stack(costs_new_DE, fill=TRUE)
 costs_new_all_DE[is.na(costs_new_all_DE)] = 0
+rm(costs_new_DE)
 
 
 

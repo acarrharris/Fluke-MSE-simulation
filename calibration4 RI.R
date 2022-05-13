@@ -351,6 +351,36 @@ for(p in levels(periodz)){
 
 pds_all= list.stack(pds, fill=TRUE)
 pds_all[is.na(pds_all)] = 0
+rm(pds)
+
+
+utilites_RI = list()
+
+for(d in 1:100) {
+  
+  #Create radnom draws of preference parameters based on the estimated means and SD from the choice model
+  #For now I am drawing only one set of utility parameters across the sample 
+  
+  param_draws_RI = as.data.frame(1:30000)
+  names(param_draws_RI)[names(param_draws_RI) == "1:30000"] = "tripid"
+  param_draws_RI$beta_sqrt_sf_keep = rnorm(30000, mean = 0.535, sd = 0.692)
+  param_draws_RI$beta_sqrt_sf_release = rnorm(30000, mean = 0, sd = 0.358)
+  param_draws_RI$beta_sqrt_bsb_keep = rnorm(30000, mean = 0.273, sd = 0.245)
+  param_draws_RI$beta_sqrt_bsb_release = rnorm(30000, mean = 0, sd = 0)
+  param_draws_RI$beta_sqrt_scup_keep = rnorm(30000, mean = 0.078, sd = 0.096)
+  param_draws_RI$beta_sqrt_scup_release = rnorm(30000, mean = 0, sd = 0.077)
+  param_draws_RI$beta_opt_out = rnorm(30000, mean = -2.398, sd = 2.193)
+  param_draws_RI$beta_striper_blue = rnorm(30000, mean = 1.272, sd = 1.652)
+  param_draws_RI$beta_cost = rnorm(30000, mean = -0.012, sd = 0)
+  param_draws_RI$parameter_draw=d
+  param_draws_RI <- param_draws_RI[1:n_drawz, ] 
+  
+  utilites_RI[[d]]= param_draws_RI
+  
+}
+
+utilites_RI_all=list.stack(utilites_RI, fill=TRUE)
+
 
 # Now calculate trip probabilities and utilities based on the multiple catch draws for each choice occasion
 costs_new_RI = list()
@@ -395,28 +425,9 @@ for(p in levels(periodz)){
   
   for(d in 1:1) {
     
-    #Create radnom draws of preference parameters based on the estimated means and SD from the choice model
-    #For now I am drawing only one set of utility parameters across the sample 
-    
-    param_draws_RI = as.data.frame(1:30000)
-    names(param_draws_RI)[names(param_draws_RI) == "1:30000"] = "tripid"
-    
-    param_draws_RI$beta_sqrt_sf_keep = rnorm(30000, mean = 0.559, sd = 0.678)
-    param_draws_RI$beta_sqrt_sf_release = rnorm(30000, mean = 0, sd = 0.336)
-    param_draws_RI$beta_sqrt_bsb_keep = rnorm(30000, mean = 0.275, sd = 0.261)
-    param_draws_RI$beta_sqrt_bsb_release = rnorm(30000, mean = 0, sd = 0)
-    param_draws_RI$beta_sqrt_scup_keep = rnorm(30000, mean = 0.075, sd = 0.143)
-    param_draws_RI$beta_sqrt_scup_release = rnorm(30000, mean = 0, sd = 0)
-    param_draws_RI$beta_opt_out = rnorm(30000, mean = -2.641, sd = 2.554)
-    param_draws_RI$beta_striper_blue = rnorm(30000, mean = 1.429, sd = 1.920)
-    param_draws_RI$beta_cost = rnorm(30000, mean = -0.012, sd = 0)
 
-    
-    param_draws_RI$parameter_draw=d
-    param_draws_RI <- param_draws_RI[1:n_drawz, ] 
-    
-    trip_data =  merge(param_draws_RI,trip_data,by="tripid")
-    
+    param_draws_RI= utilites_RI[[1]]
+    trip_data =  merge(param_draws_RI,trip_data,by="tripid")    
     
     
     #Expected utility
@@ -533,16 +544,19 @@ pds_new_all_RI[is.na(pds_new_all_RI)] = 0
 pds_new_all_RI$state = state1
 pds_new_all_RI$alt_regs = 0
 pds_new_all_RI= subset(pds_new_all_RI, select=-c(Group.1, tot_sf_catch, tot_bsb_catch))
+rm(pds_new)
 
 
 
 # costs_new_all contain trip outcomes for the baseline period. Will use to calculate welfare changes, 
 # and assign catch-per-trip in the prediction years. 
-
-
 costs_new_all_RI=list.stack(costs_new_RI, fill=TRUE)
-
 costs_new_all_RI[is.na(costs_new_all_RI)] = 0
+rm(costs_new_RI)
+
+
+
+
 
 
 sum(pds_new_all_RI$tot_keep)
