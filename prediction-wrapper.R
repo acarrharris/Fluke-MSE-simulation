@@ -6,10 +6,8 @@
   #2) Simulate the fishery under alternative regulations and a new catch-at-length distribution for summer flounder
         # a) Create new catch-at-length/catch-per-trip distributions for summer flounder based on population numbers at length. 
         # a) Calcualte angler welfare/fishing effort changes and changes in catch
-
-#profvis::profvis({
 # Modeling wrapper test
-
+#profvis::profvis({
 #load needed packages and install if not currently installed.
 pkgs_to_use <- c("tidyr",
                  "magrittr",
@@ -31,29 +29,46 @@ pkgs_to_use <- c("tidyr",
                  #"univariateML",
                  #"logspline",
                  "readr",
-                 "data.table")
+                 "data.table",
+                 "conflicted")
 #install.packages(setdiff(pkgs_to_use, rownames(installed.packages())))  
-lapply(pkgs_to_use, library, character.only = TRUE)
-
+lapply(pkgs_to_use, library, character.only = TRUE, quietly = TRUE)
+# library(readxl)
+# library(writexl)
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
 ### 
 
 # Input the data set containing alternative regulations and directed trips (directed_trips_region - alternative regs test.xlsx)
+mgmt_scen <- 1
+directed_trips_table <- readRDS(paste0("regulations_option",mgmt_scen,".rds"))
 #directed_trips_table <- data.frame(read_excel("directed_trips_region - alternative regs test.xlsx"))
-directed_trips_table <- readRDS("directed_trips_regions_bimonthly.rds")
+#directed_trips_table <- readRDS("directed_trips_regions_bimonthly.rds")
+#directed_trips_table <- readxl::read_xlsx("directed_trips_regions_bimonthly_test.xlsx")
+# for (i in c(1:5,7)) {
+#   xx <- readxl::read_xlsx(paste0("regulations_option",i,".xlsx"))
+#  saveRDS(xx,file=paste0("regulations_option",i,".rds"))
+# }
 #directed_trips_table <- readRDS("coastwide_regulations_scenario.rds")
 # Input the calibration output which contains the number of choice occasions needed to simulate
 #calibration_data = data.frame(read_excel("calibration_output_by_period.xlsx"))
 calibration_data_table <- readRDS("calibration_output_by_period.rds")
 #utility parameter draws
-param_draws_all <- readRDS("param_draws_all.rds")
+#param_draws_all <- readRDS("param_draws_all.rds")
+source("gen_params.R")
 #costs
-costs_new <- readRDS( "costs_all.rds")
+#costs_new <- readRDS( "costs_all.rds")
+costs_new <- readRDS( "costs_all_1000.rds")
+# for (i in 1:9) costs_new[[i]] <- costs_new[[i]] %>% filter(tripid<=1000)
+# saveRDS(costs_new, file = "costs_all_1000.rds")
 
+#costs_new <- fread(file="costs_test1.csv")
+#})
 
 # Read-in current population length composition (from sinatra output)
 Nlen <- 42
 om_length_cm <- scan("om-length.dat",n=Nlen+1)
-cm2in <- read_csv("cm2in.csv", col_names = FALSE)
+cm2in <- read_csv("cm2in.csv", col_names = FALSE, show_col_types = FALSE)
 lenbinuse <- as.integer(unlist(cm2in[,1]))
 Nlen_in <- length(lenbinuse)
 cm2in <- cm2in %>% 
@@ -70,59 +85,62 @@ om_length_in <- om_length_cm[-1] %*% t(cm2in)
 # catch-at-length and catch-per-trip for summer flounder
 source("catch at length given stock structure - prediction.R")
 
-#catch data
-sf_catch_data_ma <- readRDS("predicted_catch_MA.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
-sf_catch_data_ri <- readRDS("predicted_catch_RI.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
-sf_catch_data_ct <- readRDS("predicted_catch_CT.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
-
-sf_catch_data_ny <- readRDS("predicted_catch_NY.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
-sf_catch_data_nj <- readRDS("predicted_catch_NJ.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
-sf_catch_data_de <- readRDS("predicted_catch_DE.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
-
-sf_catch_data_md <- readRDS("predicted_catch_MD.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
-sf_catch_data_va <- readRDS("predicted_catch_VA.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
-
-sf_catch_data_nc <- readRDS("predicted_catch_NC.rds") %>% 
-  tibble() %>% 
-  rename(tot_sf_catch = sf_t_nb,
-         tot_bsb_catch = bsb_t_nb) %>%
-  I()
+# #catch data
+# sf_catch_data_ma <- readRDS("predicted_catch_MA.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
+# sf_catch_data_ri <- readRDS("predicted_catch_RI.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
+# sf_catch_data_ct <- readRDS("predicted_catch_CT.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
+# 
+# sf_catch_data_ny <- readRDS("predicted_catch_NY.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
+# sf_catch_data_nj <- readRDS("predicted_catch_NJ.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
+# sf_catch_data_de <- readRDS("predicted_catch_DE.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
+# 
+# sf_catch_data_md <- readRDS("predicted_catch_MD.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
+# sf_catch_data_va <- readRDS("predicted_catch_VA.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
+# 
+# sf_catch_data_nc <- readRDS("predicted_catch_NC.rds") %>% 
+#   tibble() %>% 
+#   rename(tot_sf_catch = sf_t_nb,
+#          tot_bsb_catch = bsb_t_nb) %>%
+#   I()
 
 # Read-in the current population length composition  #don't need this in final as it's already an object.
 #size_data_read <- data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx"))
 size_data_read <- readRDS("sf_fitted_sizes_y2plus.rds") %>% tibble()
+
+#calibration_data_table$state <- factor(calibration_data_table$state,levels=c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))
+#split(calibration_data_table,calibration_data_table$state) #
 
 # loop over states(NC omitted for now)
 params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"),
@@ -160,16 +178,16 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"),
                  0.001), #1),
                dchoose = rep(1,9)) #1-1.1))
                
-params <- list(state1 = "MA",
-               region1 = "NO",
-               calibration_data_table = list(calibration_data_table),
-               directed_trips_table = list(directed_trips_table),
-               size_data_read = list(size_data_read),
-               param_draws_MA = list(param_draws_all[[1]]),
-               costs_new_all_MA = list(costs_new[[1]]),
-               sf_catch_data_all = list(sf_catch_data_ma),
-               prop_bsb_keep = 1-0.53,
-               dchoose = 1)
+# params <- list(state1 = "MA",
+#                region1 = "NO",
+#                calibration_data_table = list(calibration_data_table),
+#                directed_trips_table = list(directed_trips_table),
+#                size_data_read = list(size_data_read),
+#                param_draws_MA = list(param_draws_all[[1]]),
+#                costs_new_all_MA = list(costs_new[[1]]),
+#                sf_catch_data_all = list(sf_catch_data_ma),
+#                prop_bsb_keep = 1-0.53,
+#                dchoose = 1)
 # 
 # params <- list(state1 = "NJ",
 #                region1 = "NJ",
@@ -181,15 +199,16 @@ params <- list(state1 = "MA",
 #                sf_catch_data_all = list(sf_catch_data_nj))
 
 #source("prediction-all.R")
-source("prediction-vec.R")
+#source("prediction-vec.R")
+source("prediction-vec-sim.R")
 
-set.seed(1989)
-simkeep <- NULL
-simrel <- NULL
-simagg <- NULL
-for (jsim in 1:30) {
-##########  need to add link to OM scenario regulations
-
+# set.seed(1989)
+# simkeep <- NULL
+# simrel <- NULL
+# simagg <- NULL
+# for (jsim in 1:30) {
+# ##########  need to add link to OM scenario regulations
+# print(jsim)
 #params$dchoose <- rep(sample(1:1000,1),9)
   
 safe_predict_rec_catch <- purrr::safely(predict_rec_catch, otherwise = NA_real_)
@@ -241,6 +260,23 @@ pred_len <- tibble(aggregate_prediction_output) %>%
   separate(bin, into =c("type","len"),sep = "_length_") %>% 
   mutate(len = as.numeric(len)) #%>% 
   #I()
+mulen <- pred_len %>%
+  group_by(type) %>%
+  summarize(mulen = sum(len*num)/sum(num),
+            .groups = "drop") %>% 
+  pivot_wider(names_from = type,
+              names_glue = "mulen_{type}",
+              values_from = mulen) %>% 
+  bind_cols(aggregate_prediction_output) %>%
+  select(sim, observed_trips, n_choice_occasions, change_CS, cost, keep_one, mulen_keep, mulen_release)
+#mulen
+
+biglen <- pred_len %>% 
+  filter(type == "keep") %>% 
+  mutate(numbig = ifelse(len>=28,num,0))  %>% 
+  summarize(fracbig = sum(numbig)/sum(num))
+mulen <- bind_cols(mulen, biglen)  
+
 #pred_len
 out_lens <- tibble(type = rep(c("release","keep"),each=Nlen_in),
                    len = rep(lenbinuse,2)) %>% 
@@ -248,7 +284,7 @@ out_lens <- tibble(type = rep(c("release","keep"),each=Nlen_in),
   replace_na(list(num=0)) #%>% 
   #I()
 #out_lens
-in2cm <- readr::read_csv("in2cm.csv", col_names = FALSE)[,-1]
+in2cm <- readr::read_csv("in2cm.csv", col_names = FALSE, show_col_types = FALSE)[,-1]
 keep <- out_lens %>% 
   filter(type == "keep") %>% 
   dplyr::select(num) %>% 
@@ -262,24 +298,61 @@ release <- out_lens %>%
   #I()
 release <- release %*% t(in2cm)
 write.table(round(rbind(keep,release)/1000,3),file = "rec-catch.out", row.names = FALSE, col.names = FALSE)
-write(with(aggregate_prediction_output,observed_trips),file = "rec-catch.out", append = TRUE)
+#write(with(aggregate_prediction_output,observed_trips),file = "rec-catch.out", append = TRUE)
+write.table(mulen,file = "rec-catch.out", append = TRUE, row.names = FALSE, col.names = FALSE)
 
-print("keep")
-print(keep)
-print("release")
-print(release)
+extra_output <- prediction_output_by_period %>% 
+  list.stack(fill = TRUE) %>% 
+  mutate_at(vars(contains("length")), replace_na, replace = 0)
+
+pred_len2 <- tibble(extra_output) %>% 
+  dplyr::select(state, contains("length")) %>% 
+  pivot_longer(cols = 2:ncol(.), names_to = "bin",values_to = "num") %>% 
+  separate(bin, into =c("type","len"),sep = "_length_") %>% 
+  mutate(len = as.numeric(len))
+pred_len <- pred_len2 %>% 
+  group_by(state, type) %>%
+  summarize(mulen = sum(len*num)/sum(num), 
+            .groups = "drop") %>% 
+  pivot_wider(names_from = type,
+              names_glue = "mulen_{type}",
+              values_from = mulen)
+
+biglen <- pred_len2 %>% 
+  filter(type == "keep") %>% 
+  mutate(numbig = ifelse(len>=28,num,0))  %>% 
+  group_by(state) %>% 
+  summarize(fracbig = sum(numbig)/sum(num))
+pred_len <- left_join(pred_len, biglen)  
+
+extra_output <- extra_output %>% 
+  select(state, observed_trips, n_choice_occasions, change_CS, cost, keep_one) %>% 
+  group_by(state) %>% 
+  summarize_if(is.numeric, .funs = sum,na.rm=TRUE) %>% 
+  left_join(pred_len)
+
+write.table(extra_output,file = "rec-catch.out", append = TRUE, row.names = FALSE, col.names = FALSE)
+
+
+# print("keep")
+# print(keep)
+# print("release")
+# print(release)
 #compare.results[[jsim]] <- NULL
-simkeep <- rbind(simkeep,keep)
-simrel <- rbind(simrel,release)
-simagg <- rbind(simagg, dplyr::select(aggregate_prediction_output, -starts_with("keep_"), -starts_with("release_")))
-}
-#####
-# Stop the clock
-#proc.time() - ptm
-
+# simkeep <- rbind(simkeep,keep)
+# simrel <- rbind(simrel,release)
+# simagg <- rbind(simagg, dplyr::select(aggregate_prediction_output, -starts_with("keep_"), -starts_with("release_")))
+# }
+# #####
+# # Stop the clock
+# #proc.time() - ptm
+# results <- list(simkeep = as.data.frame(simkeep),
+#                 simrel = as.data.frame(simrel),
+#                 simagg = simagg)
+# #saveRDS(results,file="sim-prediction-comparison-2019.rds")
+# write_xlsx(results,path = "sim-prediction-comparison-2019.xlsx")
 
 # ###
 # # Calculate ouput statisitics for calibration and prediction year
 # source("simulation output stats.R")
-# 
-
+#})
