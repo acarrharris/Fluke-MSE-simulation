@@ -363,7 +363,7 @@ dfs <- trip_data %>%
   ungroup() %>% 
   left_join(bsb_sc_data, by = c("period","catch_draw","tripid")) %>% 
   mutate_if(is.numeric, replace_na, replace = 0) %>% 
-  left_join(regs %>% dplyr::select(period, bsb_bag)) %>% 
+  left_join(regs %>% dplyr::select(period, bsb_bag), by = c("period")) %>% 
   mutate(region = region1,
          keep_bsb = rbinom(nrow(.), tot_bsb_catch, prop_bsb_keep),   # GF adding BSB catch from draws to retain correlation
          tot_keep_bsb = ifelse(keep_bsb <= bsb_bag, keep_bsb, bsb_bag),
@@ -431,7 +431,7 @@ d <- 1
 #param_draws_MA_prediction = subset(param_draws_MA, parameter_draw=i)
 param_draws_MA_prediction = param_draws_MA %>% tibble() %>% filter(parameter_draw==dchoose)
 #trip_data =  merge(param_draws_MA_prediction,trip_data,by="tripid")
-trip_data <- left_join(param_draws_MA_prediction,trip_data,by="tripid")
+trip_data <- right_join(param_draws_MA_prediction,trip_data,by="tripid")
 
 if (region1 %in% c("NO","NJ")) {
   # Expected utility (prediction year)
