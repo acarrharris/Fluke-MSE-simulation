@@ -634,7 +634,7 @@ mean_trip_data <- mean_trip_data %>%
 # mean_trip_data$vA_striper_blue <- mean_trip_data$beta_striper_blue*mean_trip_data$striper_blue 
 mean_trip_data <- mean_trip_data %>% 
   mutate(vA_optout = beta_opt_out*opt_out,
-         vA_striper_blue = beta_striper_blue*striper_blue,
+         vA_striper_blue = beta_striper_blue*striper_blue + beta_cost*cost,
          vA = ifelse(alt==1,vA,0),
          v0 = ifelse(alt==1,v0,0))
 #Now put these three values in the same column, exponentiate, and calculate their sum (vA_col_sum)
