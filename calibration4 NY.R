@@ -43,6 +43,7 @@ for(p in levels(periodz)){
   n_trips = mean(directed_trips_p$dtrip_2019)
   #n_draws = min(1000,n_trips*2.5 )
   n_draws = n_drawz
+  
   fluke_bag = mean(directed_trips_p$fluke_bag_2019)
   fluke_min = mean(directed_trips_p$fluke_min_2019)
   bsb_bag = mean(directed_trips_p$bsb_bag_2019)
@@ -353,6 +354,39 @@ for(p in levels(periodz)){
 
 pds_all= list.stack(pds, fill=TRUE)
 pds_all[is.na(pds_all)] = 0
+rm(pds)
+
+
+
+
+
+
+#Create random draws of preference parameters based on the estimated means and SD from the choice model
+utilites_NY = list()
+for(d in 1:100) {
+  
+  
+  param_draws_NY = as.data.frame(1:30000)
+  names(param_draws_NY)[names(param_draws_NY) == "1:30000"] = "tripid"
+  param_draws_NY$beta_sqrt_sf_keep = rnorm(30000, mean = 0.535, sd = 0.692)
+  param_draws_NY$beta_sqrt_sf_release = rnorm(30000, mean = 0, sd = 0.358)
+  param_draws_NY$beta_sqrt_bsb_keep = rnorm(30000, mean = 0.273, sd = 0.245)
+  param_draws_NY$beta_sqrt_bsb_release = rnorm(30000, mean = 0, sd = 0)
+  param_draws_NY$beta_sqrt_scup_keep = rnorm(30000, mean = 0.078, sd = 0.096)
+  param_draws_NY$beta_sqrt_scup_release = rnorm(30000, mean = 0, sd = 0.077)
+  param_draws_NY$beta_opt_out = rnorm(30000, mean = -2.398, sd = 2.193)
+  param_draws_NY$beta_striper_blue = rnorm(30000, mean = 1.272, sd = 1.652)
+  param_draws_NY$beta_cost = rnorm(30000, mean = -0.012, sd = 0)
+  param_draws_NY$parameter_draw=d
+  param_draws_NY <- param_draws_NY[1:n_drawz, ] 
+  
+  
+  utilites_NY[[d]]= param_draws_NY
+  
+}
+
+utilites_NY_all=list.stack(utilites_NY, fill=TRUE)
+
 
 # Now calculate trip probabilities and utilities based on the multiple catch draws for each choice occasion
 costs_new_NY = list()
@@ -397,28 +431,9 @@ for(p in levels(periodz)){
   
   for(d in 1:1) {
     
-    #Create radnom draws of preference parameters based on the estimated means and SD from the choice model
-    #For now I am drawing only one set of utility parameters across the sample 
+    param_draws_NY= utilites_NY[[1]]
+    trip_data =  merge(param_draws_NY,trip_data,by="tripid")   
     
-    param_draws_NY = as.data.frame(1:30000)
-    names(param_draws_NY)[names(param_draws_NY) == "1:30000"] = "tripid"
-    
-    param_draws_NY$beta_sqrt_sf_keep = rnorm(30000, mean = 0.559, sd = 0.678)
-    param_draws_NY$beta_sqrt_sf_release = rnorm(30000, mean = 0, sd = 0.336)
-    param_draws_NY$beta_sqrt_bsb_keep = rnorm(30000, mean = 0.275, sd = 0.261)
-    param_draws_NY$beta_sqrt_bsb_release = rnorm(30000, mean = 0, sd = 0)
-    param_draws_NY$beta_sqrt_scup_keep = rnorm(30000, mean = 0.075, sd = 0.143)
-    param_draws_NY$beta_sqrt_scup_release = rnorm(30000, mean = 0, sd = 0)
-    param_draws_NY$beta_opt_out = rnorm(30000, mean = -2.641, sd = 2.554)
-    param_draws_NY$beta_striper_blue = rnorm(30000, mean = 1.429, sd = 1.920)
-    param_draws_NY$beta_cost = rnorm(30000, mean = -0.012, sd = 0)
-    
-    
-    
-    param_draws_NY$parameter_draw=d
-    param_draws_NY <- param_draws_NY[1:n_drawz, ] 
-    
-    trip_data =  merge(param_draws_NY,trip_data,by="tripid")
     
     
     
@@ -450,7 +465,7 @@ for(p in levels(periodz)){
     #Caluculate the expected utility of alts 2 and 3 based on the parameters of the utility function
     mean_trip_data$vA_optout= mean_trip_data$beta_opt_out*mean_trip_data$opt_out 
     mean_trip_data$vA_striper_blue= mean_trip_data$beta_striper_blue*mean_trip_data$striper_blue +
-                                     mean_trip_data$beta_cost*mean_trip_data$cost 
+                                    mean_trip_data$beta_cost*mean_trip_data$cost  
     
     #Now put these three values in the same column, exponentiate, and caluculate their sum (vA_col_sum)
     mean_trip_data$vA[mean_trip_data$alt!=1] <- 0
@@ -537,15 +552,15 @@ pds_new_all_NY[is.na(pds_new_all_NY)] = 0
 pds_new_all_NY$state = state1
 pds_new_all_NY$alt_regs = 0
 pds_new_all_NY= subset(pds_new_all_NY, select=-c(Group.1, tot_sf_catch, tot_bsb_catch))
+rm(pds_new)
 
 
 
 # costs_new_all contain trip outcomes for the baseline period. Will use to calculate welfare changes, 
 # and assign catch-per-trip in the prediction years. 
-
 costs_new_all_NY=list.stack(costs_new_NY, fill=TRUE)
 costs_new_all_NY[is.na(costs_new_all_NY)] = 0
-
+rm(costs_new_NY)
 
 
 
