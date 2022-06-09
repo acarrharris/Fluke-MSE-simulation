@@ -95,39 +95,39 @@ numbers_at_length_NC$C_l_new=round(numbers_at_length_NC$C_l_new)
 
 
 
-tot_cat_MA_predicted=sum(numbers_at_length_MA$C_l_new)
-tot_cat_RI_predicted=sum(numbers_at_length_RI$C_l_new)
-tot_cat_CT_predicted=sum(numbers_at_length_CT$C_l_new)
-tot_cat_NY_predicted=sum(numbers_at_length_NY$C_l_new)
-tot_cat_NJ_predicted=sum(numbers_at_length_NJ$C_l_new)
-tot_cat_DE_predicted=sum(numbers_at_length_DE$C_l_new)
-tot_cat_MD_predicted=sum(numbers_at_length_MD$C_l_new)
-tot_cat_VA_predicted=sum(numbers_at_length_VA$C_l_new)
-tot_cat_NC_predicted=sum(numbers_at_length_NC$C_l_new)
+tot_cat_MA_predicted <- sum(numbers_at_length_MA$C_l_new)
+tot_cat_RI_predicted <- sum(numbers_at_length_RI$C_l_new)
+tot_cat_CT_predicted <- sum(numbers_at_length_CT$C_l_new)
+tot_cat_NY_predicted <- sum(numbers_at_length_NY$C_l_new)
+tot_cat_NJ_predicted <- sum(numbers_at_length_NJ$C_l_new)
+tot_cat_DE_predicted <- sum(numbers_at_length_DE$C_l_new)
+tot_cat_MD_predicted <- sum(numbers_at_length_MD$C_l_new)
+tot_cat_VA_predicted <- sum(numbers_at_length_VA$C_l_new)
+tot_cat_NC_predicted <- sum(numbers_at_length_NC$C_l_new)
 
 
-tot_cat_MA_base=sum(subset(selectivity, state == "MA")$C_l)
-tot_cat_RI_base=sum(subset(selectivity, state == "RI")$C_l)
-tot_cat_CT_base=sum(subset(selectivity, state == "CT")$C_l)
-tot_cat_NY_base=sum(subset(selectivity, state == "NY")$C_l)
-tot_cat_NJ_base=sum(subset(selectivity, state == "NJ")$C_l)
-tot_cat_DE_base=sum(subset(selectivity, state == "DE")$C_l)
-tot_cat_MD_base=sum(subset(selectivity, state == "MD")$C_l)
-tot_cat_VA_base=sum(subset(selectivity, state == "VA")$C_l)
-tot_cat_NC_base=sum(subset(selectivity, state == "NC")$C_l)
+tot_cat_MA_base <- sum(subset(selectivity, state == "MA")$C_l)
+tot_cat_RI_base <- sum(subset(selectivity, state == "RI")$C_l)
+tot_cat_CT_base <- sum(subset(selectivity, state == "CT")$C_l)
+tot_cat_NY_base <- sum(subset(selectivity, state == "NY")$C_l)
+tot_cat_NJ_base <- sum(subset(selectivity, state == "NJ")$C_l)
+tot_cat_DE_base <- sum(subset(selectivity, state == "DE")$C_l)
+tot_cat_MD_base <- sum(subset(selectivity, state == "MD")$C_l)
+tot_cat_VA_base <- sum(subset(selectivity, state == "VA")$C_l)
+tot_cat_NC_base <- sum(subset(selectivity, state == "NC")$C_l)
 
 
 
 #Create a factor that expands total catch in the prediction year
-catch_expansion_factor_MA=round(tot_cat_MA_predicted/tot_cat_MA_base, digits=4)
-catch_expansion_factor_RI=round(tot_cat_RI_predicted/tot_cat_RI_base, digits=4)
-catch_expansion_factor_CT=round(tot_cat_CT_predicted/tot_cat_CT_base, digits=4)
-catch_expansion_factor_NY=round(tot_cat_NY_predicted/tot_cat_NY_base, digits=4)
-catch_expansion_factor_NJ=round(tot_cat_NJ_predicted/tot_cat_NJ_base, digits=4)
-catch_expansion_factor_DE=round(tot_cat_DE_predicted/tot_cat_DE_base, digits=4)
-catch_expansion_factor_MD=round(tot_cat_MD_predicted/tot_cat_MD_base, digits=4)
-catch_expansion_factor_VA=round(tot_cat_VA_predicted/tot_cat_VA_base, digits=4)
-catch_expansion_factor_NC=round(tot_cat_NC_predicted/tot_cat_NC_base, digits=4)
+catch_expansion_factor_MA <- round(tot_cat_MA_predicted/tot_cat_MA_base, digits=4)
+catch_expansion_factor_RI <- round(tot_cat_RI_predicted/tot_cat_RI_base, digits=4)
+catch_expansion_factor_CT <- round(tot_cat_CT_predicted/tot_cat_CT_base, digits=4)
+catch_expansion_factor_NY <- round(tot_cat_NY_predicted/tot_cat_NY_base, digits=4)
+catch_expansion_factor_NJ <- round(tot_cat_NJ_predicted/tot_cat_NJ_base, digits=4)
+catch_expansion_factor_DE <- round(tot_cat_DE_predicted/tot_cat_DE_base, digits=4)
+catch_expansion_factor_MD <- round(tot_cat_MD_predicted/tot_cat_MD_base, digits=4)
+catch_expansion_factor_VA <- round(tot_cat_VA_predicted/tot_cat_VA_base, digits=4)
+catch_expansion_factor_NC <- round(tot_cat_NC_predicted/tot_cat_NC_base, digits=4)
 
 sum(numbers_at_length_new$C_l)
 sum(numbers_at_length_new$C_l_new)
@@ -215,7 +215,7 @@ numbers_at_length_NC <- numbers_at_length_NC %>%
   I()
 
 #combine the datasets
-fitted_sizes_region_all_y2 = bind_rows(numbers_at_length_MA, numbers_at_length_RI,
+fitted_sizes_region_all_y2 <- bind_rows(numbers_at_length_MA, numbers_at_length_RI,
                                        numbers_at_length_CT, numbers_at_length_NY,
                                        numbers_at_length_NJ, numbers_at_length_DE, 
                                        numbers_at_length_MD, numbers_at_length_VA,numbers_at_length_NC )
@@ -225,10 +225,21 @@ fitted_sizes_region_all_y2 = bind_rows(numbers_at_length_MA, numbers_at_length_R
 #                                                      numbers_at_length_NJ, numbers_at_length_DE, 
 #                                                      numbers_at_length_MD, numbers_at_length_VA))
 
-fitted_sizes_region_all_y2 = subset(fitted_sizes_region_all_y2, select=c(fitted_prob, fitted_length, region, year))
-fitted_sizes_region_all_y2$cdf <- ave(fitted_sizes_region_all_y2$fitted_prob, fitted_sizes_region_all_y2$region, FUN=cumsum)
+#fitted_sizes_region_all_y2 <- subset(fitted_sizes_region_all_y2, select=c(fitted_prob, fitted_length, region, year))
+size_data_read <- fitted_sizes_region_all_y2 %>% 
+  tibble() %>% 
+  select(fitted_prob, fitted_length, region, year) %>% 
+  group_by(region) %>% 
+  arrange(fitted_length) %>% 
+  mutate(cdf = cumsum(fitted_prob)) %>% 
+  ungroup() %>% 
+  mutate(region = factor(region, levels =c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))) %>% 
+  split(.$region)
+#fitted_sizes_region_all_y2$cdf <- ave(fitted_sizes_region_all_y2$fitted_prob, fitted_sizes_region_all_y2$region, FUN=cumsum)
 
 # This file contains the new catch-at-length distribution for the prediction year
 #write_xlsx(fitted_sizes_region_all_y2,"sf_fitted_sizes_y2plus.xlsx")
-saveRDS(fitted_sizes_region_all_y2,file = "sf_fitted_sizes_y2plus.rds")
+#saveRDS(fitted_sizes_region_all_y2,file = "sf_fitted_sizes_y2plus.rds")
+# fitted_sizes_region_all_y2$region <- factor(fitted_sizes_region_all_y2$region, levels =c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))
+# size_data_read <- fitted_sizes_region_all_y2 %>% split(.$region)
 

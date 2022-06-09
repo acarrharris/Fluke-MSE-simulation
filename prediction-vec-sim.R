@@ -22,20 +22,22 @@ predict_rec_catch <- function(state1 = "MA",
                                costs_new_all_MA = NULL,
                                sf_catch_data_all = NULL,
                                prop_bsb_keep = 0.33,
-                               dchoose = 1) {
+                               dchoose = 1,
+                              mgmt_scen = 1) {
    
-
-# #   #MA test vals for running through function directly
-# state1 = "MA"
-# region1 = "NO"
-# calibration_data_table = calibration_data_table
-# directed_trips_table = directed_trips_table
-# size_data_read = size_data_read
-# param_draws_MA = param_draws_all[[1]]
-# costs_new_all_MA = costs_new[[1]]
-# sf_catch_data_all = sf_catch_data_ma
-# prop_bsb_keep = 1-0.53
-# dchoose = 1
+# profvis::profvis({
+# # # # #   #MA test vals for running through function directly
+# state1 <- "MA"
+# region1 <- "NO"
+# calibration_data_table <- calibration_data_table[[1]]
+# directed_trips_table <- directed_trips_table[[1]]
+# size_data_read <- size_data_read[[1]]
+# param_draws_MA <- param_draws_all[[1]]
+# costs_new_all_MA <- costs_new[[1]]
+# sf_catch_data_all <- sf_catch_data_ma
+# prop_bsb_keep <- 1-0.53
+# dchoose <- 1
+# mgmt_scen <- 1
 
 # 
    # state1 = "NC"
@@ -47,16 +49,27 @@ predict_rec_catch <- function(state1 = "MA",
    # costs_new_all_MA = costs_new[[9]]
    # sf_catch_data_all = sf_catch_data_so
    
-   
+  # state1 = "NJ"
+  # region1 = "NJ"
+  # calibration_data_table = calibration_data_table
+  # directed_trips_table = directed_trips_table
+  # size_data_read = size_data_read
+  # param_draws_MA = param_draws_all[[5]]
+  # costs_new_all_MA = costs_new[[5]]
+  # sf_catch_data_all = sf_catch_data_nj
+  # prop_bsb_keep = 1-0.92
+  # dchoose = 1  
+  
+  if (region1=="NJ") costs_new_all_MA <- costs_new_all_MA %>% mutate(tot_sf_catch = tot_keep_sf_base + tot_rel_sf_base)
   #profvis::profvis({
   #lp <- lineprof({
 # state1="MA"
-# region1="NO"
-calibration_data <- calibration_data_table %>% tibble() %>% dplyr::filter(state == state1) %>% 
+
+calibration_data <- calibration_data_table %>% #tibble() %>% dplyr::filter(state == state1) %>% 
   dplyr::select(period, sim, state, n_choice_occasions)
-directed_trips <- directed_trips_table %>% tibble() %>% dplyr::filter(state == state1)
+directed_trips <- directed_trips_table #%>% tibble() %>% dplyr::filter(state == state1)
 #size_data <- readRDS("sf_fitted_sizes_y2plus.rds") %>% tibble() %>% filter(region == region1)
-size_data <- size_data_read %>% filter(region == state1)
+size_data <- size_data_read #%>% filter(region == state1)
 #param_draws_MA <- param_draws_all[[1]]
 #costs_new_all_MA <- costs_new[[1]]
 # sf_catch_data_all <- readRDS("predicted_catch_NO.xlsx") %>% 
@@ -83,16 +96,18 @@ max_period <- max(directed_trips$period)
 ##   Begin simulating trip outcomes ##
 ######################################
 
-periodz <- as.factor(directed_trips$period)
-levels(periodz)
-nperiod <- length(periodz)
+# periodz <- as.factor(directed_trips$period)
+# levels(periodz)
+# nperiod <- length(periodz)
 
 #for(p in levels(periodz)){
-directed_trips_p = directed_trips %>% #subset(directed_trips, period == p)
+directed_trips_p <- directed_trips %>% #subset(directed_trips, period == p)
   mutate(period = as.character(period)) %>% 
-  group_by(period) %>% 
-  mutate(n_trips = floor(mean(dtrip_2019)),
-         n_draws = floor(min(1000,n_trips*2.5)))
+  #group_by(period) %>% 
+  mutate(#n_trips = floor(mean(dtrip_2019)),
+         n_trips = floor(dtrip_2019),
+         n_draws = floor(min(1000,n_trips*2.5)))# %>% 
+  #ungroup()
          #n_draws = floor(min(30000,n_trips*2.5)))
 nsamp = 10
 niter <- nsamp*sum(directed_trips_p$n_draws)
@@ -179,7 +194,8 @@ catch_size_data <- sf_catch_data %>%
 # Impose regulations, calculate keep and release per trip
 # For summer flounder, retain keep- and release-at-length
 
-
+if (mgmt_scen !=7) {
+  
 catch_size_data <- catch_size_data %>% 
   left_join(regs, by = "period") %>% 
   mutate(posskeep = ifelse(fitted_length>=fluke_min & fitted_length<=fluke_max,1,0)) %>% 
@@ -209,9 +225,66 @@ catch_size_data <- catch_size_data %>%
 # catch_size_data$keep_adj = ifelse(catch_size_data$csum_keep<=bag & catch_size_data$keep==1, 1,0) 
 # catch_size_data$release = ifelse(catch_size_data$keep_adj==1, 0,1) 
 
-catch_size_data= subset(catch_size_data, select=c(period, catch_draw, fishid, fitted_length, tot_sf_catch, tot_bsb_catch, tripid, keep_adj, release)) %>% 
+catch_size_data <- subset(catch_size_data, select=c(period, catch_draw, fishid, fitted_length, tot_sf_catch, tot_bsb_catch, tripid, keep_adj, release)) %>% 
   rename(keep = keep_adj)
 #names(catch_size_data)[names(catch_size_data) == "keep_adj"] = "keep"
+}
+
+if (mgmt_scen ==7){
+  
+  catch_size_data <- catch_size_data %>% 
+    left_join(regs, by = "period") %>% 
+    mutate(bag_one = ifelse(fluke_bag>0,1,fluke_bag),
+           bag_two = ifelse(fluke_bag>0,2,fluke_bag),
+           min_one = ifelse(fluke_bag>0,16,fluke_min),
+           min_two = ifelse(fluke_bag>0,19,fluke_min),
+           max_one = ifelse(fluke_bag>0,19,fluke_max),
+           max_two = rep(100,nrow(.))) %>% 
+    mutate(posskeep1 = ifelse(fitted_length>=min_one & fitted_length<max_one,1,0),
+           posskeep2 = ifelse(fitted_length>=min_two & fitted_length<=max_two,1,0)) %>% 
+    #  data.table()
+    #  pop <- pop[,lapply(.SD,cusum),by=list(period, catch_draw, tripid),.SDcols=c("posskeep2")] %>%
+    # tibble() %>% rename(csum_keep = posskeep2)})
+    group_by(period, catch_draw, tripid) %>%
+    # keep = case_when(
+    # fitted_length>=minsize & fitted_length<=maxsize ~ 1,
+    # TRUE ~ 0),
+    mutate(csum_keep1 = cumsum(posskeep1),
+           csum_keep2 = cumsum(posskeep2)) %>%
+    ungroup() %>%
+    mutate(
+      keep_adj1 = case_when(
+        bag_one > 0 ~ ifelse(csum_keep1<=bag_one & posskeep1==1,1,0),
+        TRUE ~ 0),
+      keep_adj2 = case_when(
+        bag_two > 0 ~ ifelse(csum_keep2<=bag_two & posskeep2==1,1,0),
+        TRUE ~ 0),
+      # keep_adj = case_when(
+      #   csum_keep<=bag & keep==1 ~ 1,
+      #   TRUE ~ 0),
+      release1 = case_when(
+        bag_one > 0 ~ ifelse(posskeep1==0 & csum_keep1 < bag_one & keep_adj2 !=1, 1,0),
+        TRUE ~ 1),
+      release2 = case_when(
+        bag_two > 0 ~ ifelse(posskeep2==0 & csum_keep2 < bag_two & keep_adj1 !=1, 1,0),
+        TRUE ~ 1)
+    )
+  
+  # catch_size_data$keep = ifelse(catch_size_data$fitted_length>=minsize & catch_size_data$fitted_length<=maxsize, 1,0) 
+  # catch_size_data$csum_keep <- ave(catch_size_data$keep, catch_size_data$tripid, FUN=cumsum)
+  # catch_size_data$keep_adj = ifelse(catch_size_data$csum_keep<=bag & catch_size_data$keep==1, 1,0) 
+  # catch_size_data$release = ifelse(catch_size_data$keep_adj==1, 0,1) 
+  
+  catch_size_data <- catch_size_data %>% 
+    mutate(keep = ifelse(keep_adj1+keep_adj2>0,1,0),
+           release = ifelse(release1+release2>0,1,0)) %>% 
+    subset(select=c(period, catch_draw, fishid, fitted_length, tot_sf_catch, tot_bsb_catch, tripid, keep, release))
+  #rename(keep = keep_adj)
+  #names(catch_size_data)[names(catch_size_data) == "keep_adj"] = "keep"
+  
+}
+
+
 
 # system.time({
 new_size_data <- catch_size_data %>%
@@ -226,14 +299,16 @@ new_size_data <- catch_size_data %>%
 #   tibble() #%>% 
 
 # generate sum of number of kept and released fish by tripid
-# system.time({
+#system.time({lapply(1:10,function(x){
 summed_catch_data <- catch_size_data %>%
   group_by(period, catch_draw, tripid) %>%
   summarize(tot_keep = sum(keep),
             tot_rel = sum(release),
-            tot_bsb_catch = mean(tot_bsb_catch),
+#            tot_bsb_catch = mean(tot_bsb_catch),
+#            tot_bsb_catch2 = sum(tot_bsb_catch)/length(tot_bsb_catch),
+            tot_bsb_catch = tot_bsb_catch[1],
             .groups = "drop") #%>%
-# })
+#})})
 # system.time({
 # summed_catch_data <- catch_size_data %>% 
 #   data.table()
@@ -265,7 +340,7 @@ summed_catch_data <- catch_size_data %>%
 #  group_by(tripid, fitted_length) %>%
 #  summarize(keep = sum(keep))
 keep_size_data <- new_size_data %>%
-  ungroup() %>%
+  #ungroup() %>%
   dplyr::select(-release) %>% 
   pivot_wider(names_from = fitted_length, #_length,
               names_glue = "keep_length_{fitted_length}",
@@ -276,7 +351,7 @@ keep_size_data <- new_size_data %>%
 #keep_size_data
 
 release_size_data <- new_size_data %>%
-  ungroup() %>% 
+  #ungroup() %>% 
   dplyr::select(-keep) %>% 
   pivot_wider(names_from = fitted_length, #_length,
               names_glue = "release_length_{fitted_length}",
@@ -320,7 +395,9 @@ trip_data <- summed_catch_data %>%
 trip_data <- bind_rows(trip_data, sf_zero_catch) %>% 
   #arrange(period, catch_draw, tripid) %>% 
   mutate_if(is.numeric, replace_na, replace = 0) %>% 
-  mutate_if(is.character, replace_na, replace = state1) %>% #region1) #%>% 
+  mutate(region = state1,
+         tot_sf_catch = tot_keep + tot_rel)  
+#mutate_if(is.character, replace_na, replace = state1) %>% #region1) #%>% 
   #I()
 
 #quick sort and cleanup 
@@ -330,48 +407,74 @@ trip_data <- bind_rows(trip_data, sf_zero_catch) %>%
 #rownames(trip_data) <- NULL
 
 #trip_data[is.na(trip_data)] = 0
-  mutate(tot_sf_catch = tot_keep + tot_rel)
+  
 
 
 # merge catch information for other species. Assume per-trip catch outcomes for these species are the same as the calibration. 
 # This info is contained in the costs_new_all_state datasets
 if (region1 == "NO") {
-  bsb_sc_data=subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw, tripid,tot_keep_scup_base, tot_rel_scup_base)) %>%
-    tibble()
-
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_scup_base"] = "tot_keep_scup"
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_scup_base"] = "tot_rel_scup"
+  #bsb_sc_data <- subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw, tripid,tot_keep_scup_base, tot_rel_scup_base)) %>%
+  #  tibble()
+  bsb_sc_data <- costs_new_all_MA %>% #tibble() %>% 
+    filter(catch_draw<=nsamp) %>% 
+    select(period, catch_draw, tripid,tot_keep_scup_base, tot_rel_scup_base) %>%
+    #tibble()
+    rename(tot_keep_scup = tot_keep_scup_base,
+           tot_rel_scup = tot_rel_scup_base)
+  #names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_scup_base"] <- "tot_keep_scup"
+  #names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_scup_base"] <- "tot_rel_scup"
 }
 
 if (region1 == "NJ") {
-  bsb_sc_data=subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw,tripid,tot_keep_scup_base, tot_rel_scup_base,
-                                                                   tot_keep_wf_base, tot_rel_wf_base)) %>%
-    tibble()
-
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_wf_base"] = "tot_keep_wf"
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_wf_base"] = "tot_rel_wf"
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_scup_base"] = "tot_keep_scup"
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_scup_base"] = "tot_rel_scup"
+  # bsb_sc_data <- subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw,tripid,tot_keep_scup_base, tot_rel_scup_base,
+  #                                                                  tot_keep_wf_base, tot_rel_wf_base)) %>%
+  #   tibble()
+  bsb_sc_data <- costs_new_all_MA %>% 
+    #tibble() %>% 
+    filter(catch_draw<=nsamp) %>% 
+    select(period, catch_draw,tripid,tot_keep_scup_base, tot_rel_scup_base,
+           tot_keep_wf_base, tot_rel_wf_base) %>%
+    rename(tot_keep_scup = tot_keep_scup_base,
+           tot_rel_scup = tot_rel_scup_base,
+           tot_keep_wf = tot_keep_wf_base,
+           tot_rel_wf = tot_rel_wf_base)
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_wf_base"] <- "tot_keep_wf"
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_wf_base"] <- "tot_rel_wf"
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_scup_base"] <- "tot_keep_scup"
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_scup_base"] <- "tot_rel_scup"
 }
 
 if (state1 %in% c("DE","MD")) {
-  bsb_sc_data=subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw,tripid,tot_keep_wf_base, tot_rel_wf_base)) %>%
-
-     tibble()
-
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_wf_base"] = "tot_keep_wf"
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_wf_base"] = "tot_rel_wf"
+  # bsb_sc_data <- subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw,tripid,tot_keep_wf_base, tot_rel_wf_base)) %>%
+  # 
+  #    tibble()
+  bsb_sc_data <- costs_new_all_MA %>% 
+    #tibble() %>% 
+    filter(catch_draw<=nsamp) %>% 
+    select(period, catch_draw,tripid,tot_keep_wf_base, tot_rel_wf_base) %>%
+    rename(tot_keep_wf = tot_keep_wf_base,
+           tot_rel_wf = tot_rel_wf_base)
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_wf_base"] <- "tot_keep_wf"
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_wf_base"] <- "tot_rel_wf"
 }
 
 if (state1 %in% c("VA","NC")) {
-  bsb_sc_data=subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw, tripid,
-                                                                   tot_keep_wf_base, tot_rel_wf_base,
-                                                                   tot_keep_rd_base, tot_rel_rd_base)) %>%
-    tibble()
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_wf_base"] = "tot_keep_wf"
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_wf_base"] = "tot_rel_wf"
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_rd_base"] = "tot_keep_rd"
-  names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_rd_base"] = "tot_rel_rd"
+  # bsb_sc_data=subset(costs_new_all_MA, catch_draw<=nsamp, select=c(period, catch_draw, tripid,
+  #                                                                  tot_keep_wf_base, tot_rel_wf_base,
+  #                                                                  tot_keep_rd_base, tot_rel_rd_base)) %>%
+  #   tibble()
+  bsb_sc_data <- costs_new_all_MA %>% 
+    #tibble() %>% 
+    filter(catch_draw<=nsamp) %>%
+    select(period, catch_draw, tripid,tot_keep_wf_base, tot_rel_wf_base,tot_keep_rd_base, tot_rel_rd_base) %>%
+    rename(tot_keep_wf = tot_keep_wf_base,
+           tot_rel_wf = tot_rel_wf_base,
+           tot_keep_rd = tot_keep_rd_base,
+           tot_rel_rd = tot_rel_rd_base)
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_wf_base"] = "tot_keep_wf"
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_wf_base"] = "tot_rel_wf"
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_rd_base"] = "tot_keep_rd"
+  # names(bsb_sc_data)[names(bsb_sc_data) == "tot_rel_rd_base"] = "tot_rel_rd"
 }
 
 #names(bsb_sc_data)[names(bsb_sc_data) == "tot_keep_bsb_base"] = "tot_keep_bsb"
@@ -380,12 +483,12 @@ if (state1 %in% c("VA","NC")) {
 # merge the trip data (summer flounder catch + lengths) with the other species data (numbers kept and released))
 #trip_data <-  merge(trip_data,bsb_sc_data,by="tripid") %>% 
 dfs <- trip_data %>% 
-  ungroup() %>% 
+  #ungroup() %>% 
   left_join(bsb_sc_data, by = c("period","catch_draw","tripid")) %>% 
   # zap <- bsb_sc_data %>% data.table()
   # zip <- trip_data %>% ungroup() %>% data.table()
   # zop <- zap[zip,on=c("period","catch_draw","tripid")]
-  mutate_if(is.numeric, replace_na, replace = 0) %>% 
+  #mutate_if(is.numeric, replace_na, replace = 0) %>% 
   left_join(regs %>% dplyr::select(period, bsb_bag), by = c("period")) %>% 
   mutate(region = region1,
          keep_bsb = rbinom(nrow(.), tot_bsb_catch, prop_bsb_keep),   # GF adding BSB catch from draws to retain correlation
@@ -435,11 +538,11 @@ dfs <- trip_data %>%
 
 #  cost_data = subset(costs_new_all_MA, period == p, select=-c(period, tot_sf_catch))
 #GF check here-- cost data is state-specific, need to locate correct costs in the next line
-cost_data <- tibble(costs_new_all_MA) %>% dplyr::select(-tot_sf_catch)
+cost_data <- costs_new_all_MA %>% dplyr::select(-tot_sf_catch)
 #trip_data =  merge(pds,cost_data,by=c("tripid", "catch_draw"))
 #trip_data <- left_join(pds,cost_data,by=c("period", "tripid", "catch_draw")) %>% 
-trip_data <- left_join(dfs,cost_data,by=c("period", "tripid", "catch_draw")) %>% 
-  mutate_if(is.numeric, replace_na, replace = 0) #%>% 
+trip_data <- left_join(dfs,cost_data,by=c("period", "tripid", "catch_draw")) #%>% 
+  #mutate_if(is.numeric, replace_na, replace = 0) #%>% 
 #I()
 #  trip_data[is.na(trip_data)] = 0
 
@@ -452,7 +555,7 @@ d <- as.integer(1)
 #dchoose = 1  
 # Use the previously drawn set of utility parameters to calculate expected utility, welfare, and effort in the prediction year
 #param_draws_MA_prediction = subset(param_draws_MA, parameter_draw=i)
-param_draws_MA_prediction = param_draws_MA %>% tibble() %>% filter(parameter_draw==dchoose)
+param_draws_MA_prediction = param_draws_MA %>% filter(parameter_draw==dchoose) #%>% tibble() %>% filter(parameter_draw==dchoose)
 #trip_data =  merge(param_draws_MA_prediction,trip_data,by="tripid")
 trip_data <- right_join(param_draws_MA_prediction,trip_data,by="tripid")
 
@@ -606,6 +709,12 @@ mean_trip_data <- mean_trip_data[, lapply(.SD, mean), by=list(period,tripid)] %>
 # ungroup() %>% 
 #  mutate(region = rep(region1,nrow(.)))
 
+nkeep <- trip_data %>%
+  group_by(period, tripid) %>%
+  summarise(keep_one = length(which(tot_keep>0))/length(tot_keep), #n(),
+            .groups = "drop")
+mean_trip_data <- left_join(mean_trip_data, nkeep, by = c("period", "tripid"))
+
 #summarise_all(.funs = c("mean"), na.rm = TRUE, .groups = "drop")
 
 # Now expand the data to create three alternatives, representing the alternatives available in choice survey
@@ -673,31 +782,31 @@ mean_trip_data <- mean_trip_data %>%
 
 # Get rid of things we don't need. 
 if (region1 == "NO") {
-  mean_trip_data = subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum,
+  mean_trip_data <- subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum,
                                                             beta_cost, beta_striper_blue, beta_opt_out, beta_sqrt_scup_release, beta_sqrt_scup_keep,
                                                             beta_sqrt_bsb_release, beta_sqrt_bsb_keep, beta_sqrt_sf_release, beta_sqrt_sf_keep))
 }
 if (region1 == "NJ") {
-  mean_trip_data = subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum,
+  mean_trip_data <- subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum,
                                                             beta_cost, beta_striper_blue, beta_opt_out, beta_sqrt_scup_release, beta_sqrt_scup_keep,
                                                             beta_sqrt_bsb_release, beta_sqrt_bsb_keep, beta_sqrt_sf_release, beta_sqrt_sf_keep,
                                                             beta_sqrt_wf_release,beta_sqrt_wf_keep))
 }
 if (state1 %in% c("DE","MD")) {
-  mean_trip_data = subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum,
+  mean_trip_data <- subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum,
                                                             beta_cost, beta_striper_blue, beta_opt_out,
                                                             beta_sqrt_bsb_release, beta_sqrt_bsb_keep, beta_sqrt_sf_release, beta_sqrt_sf_keep,
                                                             beta_sqrt_wf_release,beta_sqrt_wf_keep))
 }
 if (state1 %in% c("VA","NC")) {
-  mean_trip_data = subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum,
+  mean_trip_data <- subset(mean_trip_data, alt==1, select=-c(alt, opt_out, striper_blue, vA_optout, vA_striper_blue, vA_row_sum, vA_col_sum, v0_row_sum, v0_col_sum,
                                                             beta_cost, beta_striper_blue, beta_opt_out,
                                                             beta_sqrt_bsb_release, beta_sqrt_bsb_keep, beta_sqrt_sf_release, beta_sqrt_sf_keep, 
                                                             beta_sqrt_wf_release, beta_sqrt_wf_keep, beta_sqrt_rd_release, beta_sqrt_rd_keep))
 }
 
 # Multiply the average trip probability by each of the catch variables (not the variable below) to get probability-weighted catch
-list_names = colnames(mean_trip_data)[colnames(mean_trip_data) !="Group.1" & colnames(mean_trip_data) !="tripid" 
+list_names <- colnames(mean_trip_data)[colnames(mean_trip_data) !="Group.1" & colnames(mean_trip_data) !="tripid" 
                                       & colnames(mean_trip_data) !="catch_draw" & colnames(mean_trip_data) !="period" #& colnames(mean_trip_data) !="cost" 
                                       & colnames(mean_trip_data) !="tot_keep_sf_base" & colnames(mean_trip_data) !="tot_rel_sf_base" 
                                       & colnames(mean_trip_data) !="tot_keep_bsb_base" & colnames(mean_trip_data) !="tot_rel_bsb_base" 
@@ -705,7 +814,7 @@ list_names = colnames(mean_trip_data)[colnames(mean_trip_data) !="Group.1" & col
                                       & colnames(mean_trip_data) !="tot_keep_wf_base" & colnames(mean_trip_data) !="tot_rel_wf_base" 
                                       & colnames(mean_trip_data) !="tot_keep_rd_base" & colnames(mean_trip_data) !="tot_rel_rd_base"
                                       & colnames(mean_trip_data) !="vA" & colnames(mean_trip_data) !="v0"  & colnames(mean_trip_data) !="probA"
-                                      & colnames(mean_trip_data) !="prob0" & colnames(mean_trip_data) !="change_CS"  ]    
+                                      & colnames(mean_trip_data) !="prob0" & colnames(mean_trip_data) !="change_CS"]    
 
 #mean_trip_data <- 
 mean_trip_data <- mean_trip_data %>% 
@@ -743,7 +852,7 @@ mean_trip_data <- mean_trip_data %>%
 
 #Now multiply the trip outcomes (catch, trip probabilities) for each choice occasion in 
 #mean_trip_pool by the expansion factor (expand), so that  each choice occasion represents a certain number of choice occasions
-sims=subset(calibration_data, sim==d) %>% 
+sims <- calibration_data %>% filter(sim==d) %>% 
   left_join(mean_trip_data %>% count(period, name = "ndraws") %>% mutate(period = as.character(period)), by = "period") %>% 
   mutate(expand = n_choice_occasions/ndraws)
 #n_choice_occasions = mean(sims$n_choice_occasions)
@@ -751,17 +860,26 @@ sims=subset(calibration_data, sim==d) %>%
 #expand=n_choice_occasions/ndraws
 
 
-mean_trip_data$sim=1
-mean_trip_data <- mean_trip_data %>% mutate(keep_one = ifelse(tot_keep>0,1,0))
+#mean_trip_data$sim=1
+mean_trip_data <- mean_trip_data %>%
+  mutate(sim = rep(1,nrow(.))) #,
+         #keep_one = ifelse(tot_keep>0,1,0))
 
 #sum probability weighted catch over all choice occasions
 #aggregate_trip_data <-aggregate(mean_trip_data, by=list(mean_trip_data$sim),FUN=sum, na.rm=TRUE)
 aggregate_trip_data <- mean_trip_data %>% 
   group_by(period, sim) %>% 
   summarize_all(sum, na.rm = TRUE) %>% 
+  ungroup() %>% 
   #left_join(sims %>% mutate(period = as.numeric(period)), by = c("period","sim"))
   right_join(sims %>% mutate(period = as.numeric(period)) %>% dplyr::select(-n_choice_occasions),
              by = c("period","sim"))
+
+
+#adjust for season length changes
+aggregate_trip_data <- directed_trips %>%
+  select(period, pd_multiplier) %>% 
+  right_join(aggregate_trip_data, by = c("period"))
 
 
 list_names = colnames(mean_trip_data)[colnames(mean_trip_data) !="Group.1" & colnames(mean_trip_data) !="tripid" 
@@ -774,7 +892,8 @@ list_names = colnames(mean_trip_data)[colnames(mean_trip_data) !="Group.1" & col
                                       & colnames(mean_trip_data) !="vA" & colnames(mean_trip_data) !="v0"
                                       & colnames(mean_trip_data) != "state" 
                                       & colnames(mean_trip_data) != "ndraws" 
-                                      & colnames(mean_trip_data) != "expand" ]
+                                      & colnames(mean_trip_data) != "expand" 
+                                      & colnames(mean_trip_data) != "pd_multiplier" ]
 #& colnames(mean_trip_data) !="cost" & colnames(mean_trip_data) !="vA" & colnames(mean_trip_data) !="v0"
 
 
@@ -784,7 +903,7 @@ list_names = colnames(mean_trip_data)[colnames(mean_trip_data) !="Group.1" & col
 #aggregate_trip_data[,list_names] <- aggregate_trip_data$expand*aggregate_trip_data[,list_names]
 
 aggregate_trip_data <- aggregate_trip_data %>% 
-  mutate(across(.cols = all_of(list_names),.fns=function(x) expand*x))
+  mutate(across(.cols = all_of(list_names),.fns=function(x) pd_multiplier*expand*x))
 
 # #This equals the observed number of trips under the new conditions
 # sum(mean_trip_data$probA)
@@ -795,8 +914,10 @@ aggregate_trip_data <- aggregate_trip_data %>%
 #    aggregate_trip_data$n_choice_occasions = n_choice_occasions
 
 
+
+
 #aggregate_trip_data = subset(aggregate_trip_data, select=-c(tripid, catch_draw, period, cost, vA , v0, sim))
-aggregate_trip_data = subset(aggregate_trip_data, select=-c(tripid, catch_draw, period, vA , v0, sim))
+aggregate_trip_data <- subset(aggregate_trip_data, select=-c(tripid, catch_draw, period, vA , v0, sim))
 #names(aggregate_trip_data)[names(aggregate_trip_data) == "probA"] = "observed_trips"
 aggregate_trip_data <- rename(aggregate_trip_data, observed_trips = chosen) %>% 
   mutate(sim = rep(d,nrow(.)))
@@ -821,7 +942,7 @@ aggregate_trip_data <- rename(aggregate_trip_data, observed_trips = chosen) %>%
 #pds_new <- aggregate_trip_data
 
 pds_new_all_MA <- aggregate_trip_data %>%  #list.stack(pds_new, fill=TRUE) %>% 
-  mutate_at(vars(contains("length")), replace_na, replace = 0) %>% 
+  #mutate_at(vars(contains("length")), replace_na, replace = 0) %>% 
 #pds_new_all_MA[is.na(pds_new_all_MA)] = 0
   mutate(state = state1,
          region = region1,
@@ -833,23 +954,23 @@ pds_new_all_MA <- aggregate_trip_data %>%  #list.stack(pds_new, fill=TRUE) %>%
 #                                                 tot_keep_scup_base, tot_rel_scup_base, 
 #                                                 tot_keep_bsb_base, tot_rel_bsb_base, tot_sf_catch))
 if (region1 == "NO") {
-pds_new_all_MA=subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_base, 
+pds_new_all_MA <- subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_base, 
                                                 tot_keep_scup_base, tot_rel_scup_base, 
                                                 tot_keep_bsb_base, tot_rel_bsb_base, tot_sf_catch))
 }
 if (region1 == "NJ") {
-  pds_new_all_MA=subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_base, 
+  pds_new_all_MA <- subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_base, 
                                                   tot_keep_scup_base, tot_rel_scup_base, 
                                                   tot_keep_wf_base, tot_rel_wf_base, 
                                                   tot_keep_bsb_base, tot_rel_bsb_base, tot_sf_catch))
 }
 if (state1 %in% c("DE","MD")) {
-  pds_new_all_MA=subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_base, 
+  pds_new_all_MA <- subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_base, 
                                                   tot_keep_wf_base, tot_rel_wf_base, 
                                                   tot_keep_bsb_base, tot_rel_bsb_base, tot_sf_catch))
 }
 if (state1 %in% c("VA","NC")) {
-pds_new_all_MA=subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_base, 
+pds_new_all_MA <- subset(pds_new_all_MA, select=-c(tot_keep_sf_base, tot_rel_sf_base, 
                                                 tot_keep_wf_base, tot_rel_wf_base, tot_keep_rd_base, tot_rel_rd_base,
                                                 tot_keep_bsb_base, tot_rel_bsb_base, tot_sf_catch))
 }

@@ -132,12 +132,18 @@ param_draws_NC$parameter_draw=1
 
 
 param_draws_all <- NULL
-param_draws_all[[1]] <- param_draws_MA
-param_draws_all[[2]] <- param_draws_RI
-param_draws_all[[3]] <- param_draws_CT
-param_draws_all[[4]] <- param_draws_NY
-param_draws_all[[5]] <- param_draws_NJ
-param_draws_all[[6]] <- param_draws_DE
-param_draws_all[[7]] <- param_draws_MD
-param_draws_all[[8]] <- param_draws_VA
-param_draws_all[[9]] <- param_draws_NC
+param_draws_all[[1]] <- param_draws_MA %>% tibble()
+param_draws_all[[2]] <- param_draws_RI %>% tibble()
+param_draws_all[[3]] <- param_draws_CT %>% tibble()
+param_draws_all[[4]] <- param_draws_NY %>% tibble()
+param_draws_all[[5]] <- param_draws_NJ %>% tibble()
+param_draws_all[[6]] <- param_draws_DE %>% tibble()
+param_draws_all[[7]] <- param_draws_MD %>% tibble()
+param_draws_all[[8]] <- param_draws_VA %>% tibble()
+param_draws_all[[9]] <- param_draws_NC %>% tibble()
+
+rm(list=c("param_draws_CT","param_draws_DE",
+          "param_draws_MA","param_draws_MD",  
+          "param_draws_NC","param_draws_NJ", 
+          "param_draws_NY","param_draws_RI", 
+          "param_draws_VA"))

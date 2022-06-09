@@ -7,7 +7,7 @@
         # a) Create new catch-at-length/catch-per-trip distributions for summer flounder based on population numbers at length. 
         # a) Calcualte angler welfare/fishing effort changes and changes in catch
 # Modeling wrapper test
-#profvis::profvis({
+profvis::profvis({
 #load needed packages and install if not currently installed.
 pkgs_to_use <- c("tidyr",
                  "magrittr",
@@ -28,7 +28,7 @@ pkgs_to_use <- c("tidyr",
                  #"scales",
                  #"univariateML",
                  #"logspline",
-                 "readr",
+                 #"readr",
                  "data.table",
                  "conflicted")
 #install.packages(setdiff(pkgs_to_use, rownames(installed.packages())))  
@@ -45,20 +45,24 @@ directed_trips_table <- readRDS(paste0("regulations_option",mgmt_scen,".rds"))
 #directed_trips_table <- data.frame(read_excel("directed_trips_region - alternative regs test.xlsx"))
 #directed_trips_table <- readRDS("directed_trips_regions_bimonthly.rds")
 #directed_trips_table <- readxl::read_xlsx("directed_trips_regions_bimonthly_test.xlsx")
-# for (i in c(1:5,7)) {
-#   xx <- readxl::read_xlsx(paste0("regulations_option",i,".xlsx"))
-#  saveRDS(xx,file=paste0("regulations_option",i,".rds"))
-# }
+#  for (i in c(3:8)) {
+# #    xx <- readxl::read_xlsx(paste0("regulations_option",i,".xlsx"))
+#    directed_trips_table <- readRDS(paste0("regulations_option",i,".rds"))
+#     directed_trips_table$state <- factor(directed_trips_table$state, levels =c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))
+#     directed_trips_table <- split(directed_trips_table, directed_trips_table$state)
+#    saveRDS(directed_trips_table,file=paste0("regulations_option",i,".rds"))
+#   }
 #directed_trips_table <- readRDS("coastwide_regulations_scenario.rds")
 # Input the calibration output which contains the number of choice occasions needed to simulate
-#calibration_data = data.frame(read_excel("calibration_output_by_period.xlsx"))
+#calibration_data = data.frame(readxl::read_excel("calibration_output_by_period.xlsx"))
 calibration_data_table <- readRDS("calibration_output_by_period.rds")
 #utility parameter draws
 #param_draws_all <- readRDS("param_draws_all.rds")
 source("gen_params.R")
 #costs
 #costs_new <- readRDS( "costs_all.rds")
-costs_new <- readRDS( "costs_all_1000.rds")
+#costs_new <- readRDS( "costs_all_1000.rds")
+costs_new <- readRDS( "costs_alt.rds")
 # for (i in 1:9) costs_new[[i]] <- costs_new[[i]] %>% filter(tripid<=1000)
 # saveRDS(costs_new, file = "costs_all_1000.rds")
 
@@ -68,12 +72,13 @@ costs_new <- readRDS( "costs_all_1000.rds")
 # Read-in current population length composition (from sinatra output)
 Nlen <- 42
 om_length_cm <- scan("om-length.dat",n=Nlen+1)
-cm2in <- read_csv("cm2in.csv", col_names = FALSE, show_col_types = FALSE)
+#cm2in <- read_csv("cm2in.csv", col_names = FALSE, show_col_types = FALSE)
+cm2in <- readRDS("cm2in.rds")
 lenbinuse <- as.integer(unlist(cm2in[,1]))
 Nlen_in <- length(lenbinuse)
-cm2in <- cm2in %>% 
-  dplyr::select(-1) %>% 
-  as.matrix() %>% 
+cm2in <- cm2in %>%
+  dplyr::select(-1) %>%
+  as.matrix() %>%
   I()
 om_length_in <- om_length_cm[-1] %*% t(cm2in)
 # size_data <- data.frame(fitted_prob = rep(om_length_in,3),
@@ -137,17 +142,21 @@ source("catch at length given stock structure - prediction.R")
 
 # Read-in the current population length composition  #don't need this in final as it's already an object.
 #size_data_read <- data.frame(read_excel("sf_fitted_sizes_y2plus.xlsx"))
-size_data_read <- readRDS("sf_fitted_sizes_y2plus.rds") %>% tibble()
+#size_data_read <- readRDS("sf_fitted_sizes_y2plus.rds") %>% tibble()
 
 #calibration_data_table$state <- factor(calibration_data_table$state,levels=c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))
-#split(calibration_data_table,calibration_data_table$state) #
+#calibration_data_table <- split(calibration_data_table %>% tibble(),calibration_data_table$state)
+#directed_trips_table$state <- factor(directed_trips_table$state, levels =c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))
+#directed_trips_table <- split(directed_trips_table, directed_trips_table$state)
+#size_data_read$region <- factor(size_data_read$region, levels =c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))
+#size_data_read <- split(size_data_read, size_data_read$region)
 
-# loop over states(NC omitted for now)
+# loop over states
 params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"),
                region1 = c(rep("NO",4),"NJ",rep("SO",4)),
-               calibration_data_table = rep(list(calibration_data_table),9),
-               directed_trips_table = rep(list(directed_trips_table),9),
-               size_data_read = rep(list(size_data_read),9),
+               calibration_data_table = calibration_data_table, #rep(list(calibration_data_table),9),
+               directed_trips_table = directed_trips_table, #rep(list(directed_trips_table),9),   #split(directed_trips_table,directed_trips_table$state), #
+               size_data_read = size_data_read, #rep(list(size_data_read),9),
                param_draws_MA = param_draws_all,
                costs_new_all_MA = costs_new,
 
@@ -176,7 +185,8 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"),
                  1-.96,
                  1-.92,
                  0.001), #1),
-               dchoose = rep(1,9)) #1-1.1))
+               dchoose = rep(1,9),
+               mgmt_scen = rep(mgmt_scen,9)) #1-1.1))
                
 # params <- list(state1 = "MA",
 #                region1 = "NO",
@@ -196,7 +206,9 @@ params <- list(state1 = c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"),
 #                size_data_read = list(size_data_read),
 #                param_draws_MA = list(param_draws_all[[5]]),
 #                costs_new_all_MA = list(costs_new[[5]]),
-#                sf_catch_data_all = list(sf_catch_data_nj))
+#                sf_catch_data_all = list(sf_catch_data_nj),
+#                prop_bsb_keep = 1-0.92,
+#                dchoose = 1)
 
 #source("prediction-all.R")
 #source("prediction-vec.R")
@@ -210,7 +222,7 @@ source("prediction-vec-sim.R")
 # ##########  need to add link to OM scenario regulations
 # print(jsim)
 #params$dchoose <- rep(sample(1:1000,1),9)
-  
+
 safe_predict_rec_catch <- purrr::safely(predict_rec_catch, otherwise = NA_real_)
 xx <- purrr::pmap(params, safe_predict_rec_catch)
 
@@ -237,7 +249,7 @@ xx <- purrr::pmap(params, safe_predict_rec_catch)
 
 prediction_output_by_period <- purrr::map(xx, 1)
 
-saveRDS(prediction_output_by_period, file = "prediction_output_by_period.rds")
+#saveRDS(prediction_output_by_period, file = "prediction_output_by_period.rds")
 
 #aggregate_prediction_output= subset(prediction_output_by_period, select=-c(state, alt_regs, period))
 aggregate_prediction_output <- prediction_output_by_period %>% 
@@ -250,7 +262,7 @@ aggregate_prediction_output <- prediction_output_by_period %>%
   #I()
 #  = aggregate(aggregate_prediction_output, by=list(aggregate_prediction_output$sim),FUN=sum, na.rm=TRUE)
 #write_xlsx(aggregate_prediction_output,"aggregate_prediction_output.xlsx")
-saveRDS(aggregate_prediction_output, file = "aggregate_prediction_output.rds")
+#saveRDS(aggregate_prediction_output, file = "aggregate_prediction_output.rds")
 
 ##########  
 
@@ -280,11 +292,12 @@ mulen <- bind_cols(mulen, biglen)
 #pred_len
 out_lens <- tibble(type = rep(c("release","keep"),each=Nlen_in),
                    len = rep(lenbinuse,2)) %>% 
-  left_join(pred_len) %>% 
+  left_join(pred_len, by = c("type", "len")) %>% 
   replace_na(list(num=0)) #%>% 
   #I()
 #out_lens
-in2cm <- readr::read_csv("in2cm.csv", col_names = FALSE, show_col_types = FALSE)[,-1]
+#in2cm <- readr::read_csv("in2cm.csv", col_names = FALSE, show_col_types = FALSE)[,-1]
+in2cm <- readRDS("in2cm.rds")
 keep <- out_lens %>% 
   filter(type == "keep") %>% 
   dplyr::select(num) %>% 
@@ -323,13 +336,13 @@ biglen <- pred_len2 %>%
   mutate(numbig = ifelse(len>=28,num,0))  %>% 
   group_by(state) %>% 
   summarize(fracbig = sum(numbig)/sum(num))
-pred_len <- left_join(pred_len, biglen)  
+pred_len <- left_join(pred_len, biglen, by = c("state"))  
 
 extra_output <- extra_output %>% 
   select(state, observed_trips, n_choice_occasions, change_CS, cost, keep_one) %>% 
   group_by(state) %>% 
   summarize_if(is.numeric, .funs = sum,na.rm=TRUE) %>% 
-  left_join(pred_len)
+  left_join(pred_len, by = c("state"))
 
 write.table(extra_output,file = "rec-catch.out", append = TRUE, row.names = FALSE, col.names = FALSE)
 
@@ -355,4 +368,5 @@ write.table(extra_output,file = "rec-catch.out", append = TRUE, row.names = FALS
 # ###
 # # Calculate ouput statisitics for calibration and prediction year
 # source("simulation output stats.R")
-#})
+})
+
