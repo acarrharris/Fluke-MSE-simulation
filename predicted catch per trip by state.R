@@ -35,7 +35,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_MA
+sf_mu_new=sf_mu*catch_expansion_factor_MA*prop_rel[1]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)
@@ -132,7 +132,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_RI
+sf_mu_new=sf_mu*catch_expansion_factor_RI*prop_rel[1]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)
@@ -228,7 +228,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_CT
+sf_mu_new=sf_mu*catch_expansion_factor_CT*prop_rel[1]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)
@@ -323,7 +323,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_NY
+sf_mu_new=sf_mu*catch_expansion_factor_NY*prop_rel[1]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)
@@ -420,7 +420,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_NJ
+sf_mu_new=sf_mu*catch_expansion_factor_NJ*prop_rel[2]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)
@@ -515,7 +515,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_DE
+sf_mu_new=sf_mu*catch_expansion_factor_DE*prop_rel[3]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)
@@ -610,7 +610,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_MD
+sf_mu_new=sf_mu*catch_expansion_factor_MD*prop_rel[3]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)
@@ -706,7 +706,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_VA
+sf_mu_new=sf_mu*catch_expansion_factor_VA*prop_rel[3]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)
@@ -802,7 +802,7 @@ cv_sf_base = sqrt(var_sf)/sf_mu
 cv_sf_base
 
 # Now adjust the mu parameter for prediction year distribution by the expansion factor
-sf_mu_new=sf_mu*catch_expansion_factor_NC
+sf_mu_new=sf_mu*catch_expansion_factor_NC*prop_rel[3]
 
 #solve for new size parameter 
 sf_size_new=(sf_mu_new^2)/(((cv_sf_base*sf_mu_new)^2)-sf_mu_new)

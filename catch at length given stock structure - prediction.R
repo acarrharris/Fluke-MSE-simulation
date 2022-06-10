@@ -51,58 +51,13 @@ numbers_at_length <- tibble(l_in_bin = lenbinuse,
 numbers_at_length$N_l=numbers_at_length$N_l*1000
 sum(numbers_at_length$N_l)
 
-
-#########
-#GF check here
-#Numbers at length (N_l) must range from 6 inches to 31 to match with the recreational selectivity file
-#I used the following code to add N_l length >31 to the 31 inch bin, but this can be done elsewhere:
-
-# numbers_at_length$l_in_bin[numbers_at_length$l_in_bin==32] <- 31
-# numbers_at_length <- aggregate(numbers_at_length, by=list(numbers_at_length$l_in_bin),FUN=sum, na.rm=TRUE)
-# numbers_at_length <-subset(numbers_at_length, select=c(Group.1,N_l))
-# names(numbers_at_length)[names(numbers_at_length) == "Group.1"] <- "l_in_bin"
-#########
-
-
-
 # Import and merge the selectivity data to this file 
 #selectivity = data.frame(read_excel("rec_selectivity_by_state_cdf_star_raw_18_19.xlsx")) %>% 
 #selectivity <- readRDS("rec_selectivity.rds") %>% 
-selectivity <- readRDS("rec_selectivity_20210422.rds") %>% 
+selectivity <- selectivity %>% #readRDS("rec_selectivity_20210422.rds") %>% 
   subset(select=c(l_in_bin, state, q, E, C_l))
 
 numbers_at_length_new =  merge(selectivity,numbers_at_length,by="l_in_bin", all.x=TRUE, all.y=TRUE)
-
-
-#########
-#GF check here
-#####biomass shift scenarios#####
-
-#Import the projected proportion of biomass in each state
-state_biomass_proportions <- read.rds("state_biomass_proportions.rds")
-
-#If we are not analyzing a biomass shift scenario, use the baseline year 2019 proportions. 
-state_biomass_proportions <-subset(state_biomass_proportions, year==2019)
-
-
-#If we are analyzing the biomass shift scenario, keep year y of (2020-2060)
-#state_biomass_proportions <-subset(state_biomass_proportions, year==2020+)
-
-
-#Merge the biomass proportions data to the numbers_at_length_new 
-numbers_at_length_new <-  merge(numbers_at_length_new,state_biomass_proportions,by=c("state"),  all.x=TRUE, all.y=TRUE)
-
-#Replace N_l with estimated proportions in year y 
-numbers_at_length_new = numbers_at_length_new %>% 
-  mutate(N_l = N_l*prediction)
-
-#Now numbers-at-length available to each state reflect either the no-shift scenario (year==2019), or
-#under the biomass shift scenario (year==y)
-#########
-
-
-
-
 
 
 numbers_at_length_new[is.na(numbers_at_length_new)] = 0

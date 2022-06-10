@@ -1,3 +1,4 @@
+args = commandArgs(trailingOnly=TRUE)
 
 # This is the modeling wrapper 
 
@@ -7,7 +8,7 @@
         # a) Create new catch-at-length/catch-per-trip distributions for summer flounder based on population numbers at length. 
         # a) Calcualte angler welfare/fishing effort changes and changes in catch
 # Modeling wrapper test
-profvis::profvis({
+#profvis::profvis({
 #load needed packages and install if not currently installed.
 pkgs_to_use <- c("tidyr",
                  "magrittr",
@@ -39,6 +40,10 @@ conflict_prefer("filter", "dplyr")
 conflict_prefer("select", "dplyr")
 ### 
 
+#year of the prediction
+iyr <- 2019
+iyr <- args[1]
+
 # Input the data set containing alternative regulations and directed trips (directed_trips_region - alternative regs test.xlsx)
 mgmt_scen <- 1
 directed_trips_table <- readRDS(paste0("regulations_option",mgmt_scen,".rds"))
@@ -56,6 +61,7 @@ directed_trips_table <- readRDS(paste0("regulations_option",mgmt_scen,".rds"))
 # Input the calibration output which contains the number of choice occasions needed to simulate
 #calibration_data = data.frame(readxl::read_excel("calibration_output_by_period.xlsx"))
 calibration_data_table <- readRDS("calibration_output_by_period.rds")
+
 #utility parameter draws
 #param_draws_all <- readRDS("param_draws_all.rds")
 source("gen_params.R")
@@ -66,8 +72,34 @@ costs_new <- readRDS( "costs_alt.rds")
 # for (i in 1:9) costs_new[[i]] <- costs_new[[i]] %>% filter(tripid<=1000)
 # saveRDS(costs_new, file = "costs_all_1000.rds")
 
-#costs_new <- fread(file="costs_test1.csv")
-#})
+#selectivity (read in moved from the otehr file)
+selectivity <- readRDS("rec_selectivity_20210422.rds")
+
+## OM 2 ##
+# MRIP bias
+calibration_data_table <- readRDS("calibration_output_by_period_lb.rds")
+#calibration_data_table$state <- factor(calibration_data_table$state, levels =c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))
+#calibration_data_table <- split(calibration_data_table, calibration_data_table$state)
+#saveRDS(calibration_data_table, file = "calibration_output_by_period_lb.rds")
+selectivity <- readRDS("rec_selectivity_by_state_cdf_star_raw_18_19_lb.rds")
+#xx <- readxl::read_excel("rec_selectivity_by_state_cdf_star_raw_18_19_lb.xlsx")
+#saveRDS(xx,file="rec_selectivity_by_state_cdf_star_raw_18_19_lb.rds")
+
+
+## OM 3 ##
+## read in biomass shift params
+# the adjustment gets made in predicted catch per trip.
+prop_rel <- readRDS('region_availability.rds') %>% 
+  #ungroup() %>% 
+  #mutate(region = fct_relevel(region,c("NO","NJ","SO"))) %>% 
+  #arrange(region) %>% 
+  filter(year == iyr) %>% 
+  select(prop_rel) %>% 
+  t() %>% as.numeric()
+#print("proportions!")
+#print(prop_rel)  
+#comment out below if OM 3
+prop_rel <- c(1,1,1)
 
 # Read-in current population length composition (from sinatra output)
 Nlen <- 42
@@ -368,5 +400,4 @@ write.table(extra_output,file = "rec-catch.out", append = TRUE, row.names = FALS
 # ###
 # # Calculate ouput statisitics for calibration and prediction year
 # source("simulation output stats.R")
-})
 
