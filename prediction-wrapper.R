@@ -40,13 +40,38 @@ conflict_prefer("filter", "dplyr")
 conflict_prefer("select", "dplyr")
 ### 
 
+#
+args <- NULL
+args[1] <- 2019
+
+
 #year of the prediction
 iyr <- 2019
 iyr <- args[1]
 
+#2024 testing for the HCR testing
+#read in Kamran's results for the reg changes
+all_regs <- readRDS("~/research/Fluke-MSE-simulation/allregulations_input_HCRgrouping_regdistinct.rds")
+
+#2024 rec measures, read in the output of Kamran's function with the reg tables
+#directed_trips_table <- readRDS()
+#   tibble() %>% 
+#   rename(dtrip_2019 = dtrip2019)
+# directed_trips_table <- split(directed_trips_table, directed_trips_table$state)
+
 # Input the data set containing alternative regulations and directed trips (directed_trips_region - alternative regs test.xlsx)
-mgmt_scen <- 1
-directed_trips_table <- readRDS(paste0("regulations_option",mgmt_scen,".rds"))
+mgmt_scen <- 1 #this was for the results summary in the 2022 MSE, think about what they'll be for the rec measures
+#directed_trips_table <- readRDS(paste0("regulations_option",mgmt_scen,".rds"))
+
+# results <- NULL
+# for (iscen in 1:18) {
+# 
+# directed_trips_table <- all_regs[[iscen]] %>% 
+#   tibble() %>% 
+#   rename(dtrip_2019 = dtrip2019)
+# directed_trips_table <- split(directed_trips_table, directed_trips_table$state)
+
+
 #directed_trips_table <- data.frame(read_excel("directed_trips_region - alternative regs test.xlsx"))
 #directed_trips_table <- readRDS("directed_trips_regions_bimonthly.rds")
 #directed_trips_table <- readxl::read_xlsx("directed_trips_regions_bimonthly_test.xlsx")
@@ -77,11 +102,11 @@ selectivity <- readRDS("rec_selectivity_20210422.rds")
 
 ## OM 2 ##
 # MRIP bias
-calibration_data_table <- readRDS("calibration_output_by_period_lb.rds")
+# 2024-04-08 ###calibration_data_table <- readRDS("calibration_output_by_period_lb.rds")
 #calibration_data_table$state <- factor(calibration_data_table$state, levels =c("MA","RI","CT","NY","NJ","DE","MD","VA", "NC"))
 #calibration_data_table <- split(calibration_data_table, calibration_data_table$state)
 #saveRDS(calibration_data_table, file = "calibration_output_by_period_lb.rds")
-selectivity <- readRDS("rec_selectivity_by_state_cdf_star_raw_18_19_lb.rds")
+# 2024-04-08 ##selectivity <- readRDS("rec_selectivity_by_state_cdf_star_raw_18_19_lb.rds")
 #xx <- readxl::read_excel("rec_selectivity_by_state_cdf_star_raw_18_19_lb.xlsx")
 #saveRDS(xx,file="rec_selectivity_by_state_cdf_star_raw_18_19_lb.rds")
 
@@ -89,13 +114,13 @@ selectivity <- readRDS("rec_selectivity_by_state_cdf_star_raw_18_19_lb.rds")
 ## OM 3 ##
 ## read in biomass shift params
 # the adjustment gets made in predicted catch per trip.
-prop_rel <- readRDS('region_availability.rds') %>% 
+# 2024-04-08 prop_rel <- readRDS('region_availability.rds') %>% 
   #ungroup() %>% 
   #mutate(region = fct_relevel(region,c("NO","NJ","SO"))) %>% 
   #arrange(region) %>% 
-  filter(year == iyr) %>% 
-  select(prop_rel) %>% 
-  t() %>% as.numeric()
+# 2024-04-08   filter(year == iyr) %>% 
+# 2024-04-08   select(prop_rel) %>% 
+# 2024-04-08   t() %>% as.numeric()
 #print("proportions!")
 #print(prop_rel)  
 #comment out below if OM 3
@@ -254,10 +279,10 @@ source("prediction-vec-sim.R")
 # ##########  need to add link to OM scenario regulations
 # print(jsim)
 #params$dchoose <- rep(sample(1:1000,1),9)
-
+#profvis::profvis({
 safe_predict_rec_catch <- purrr::safely(predict_rec_catch, otherwise = NA_real_)
 xx <- purrr::pmap(params, safe_predict_rec_catch)
-
+#})
 
 # profvis::profvis(testMA <- predict_rec_catch(state1 = "MA",
 #                         region1 = "NO",
@@ -312,7 +337,7 @@ mulen <- pred_len %>%
               names_glue = "mulen_{type}",
               values_from = mulen) %>% 
   bind_cols(aggregate_prediction_output) %>%
-  select(sim, observed_trips, n_choice_occasions, change_CS, cost, keep_one, mulen_keep, mulen_release)
+  select(sim, tot_keep, tot_rel, observed_trips, n_choice_occasions, change_CS, cost, keep_one, mulen_keep, mulen_release)
 #mulen
 
 biglen <- pred_len %>% 
@@ -371,13 +396,18 @@ biglen <- pred_len2 %>%
 pred_len <- left_join(pred_len, biglen, by = c("state"))  
 
 extra_output <- extra_output %>% 
-  select(state, observed_trips, n_choice_occasions, change_CS, cost, keep_one) %>% 
+  select(state, tot_keep, tot_rel, observed_trips, n_choice_occasions, change_CS, cost, keep_one) %>% 
   group_by(state) %>% 
   summarize_if(is.numeric, .funs = sum,na.rm=TRUE) %>% 
   left_join(pred_len, by = c("state"))
 
 write.table(extra_output,file = "rec-catch.out", append = TRUE, row.names = FALSE, col.names = FALSE)
 
+# #2024-04-08 saving results of function tests for Kamran
+# results[[iscen]] <- list()
+# results[[iscen]]$lencomp <- round(rbind(keep,release)/1000,3)
+# results[[iscen]]$total <- mulen
+# results[[iscen]]$state <- extra_output
 
 # print("keep")
 # print(keep)
@@ -401,3 +431,6 @@ write.table(extra_output,file = "rec-catch.out", append = TRUE, row.names = FALS
 # # Calculate ouput statisitics for calibration and prediction year
 # source("simulation output stats.R")
 
+#}
+
+#saveRDS(results, file = "perturbation_tester.rds")
